@@ -18,9 +18,9 @@ src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsD
 
 <div style="position: absolute; top: 440px; left: 10px;">
     <p>Radius:</p>
-    <input type="range" min="1" [max]="video_height" [(ngModel)]="radius">
+    <input type="range" min="1" [max]="video_height" [(ngModel)]="radius" class="slider-width">
     <p>X:</p>
-    <input type="range" min="1" [max]="video_width" [(ngModel)]="center_x" class="slider" id="myRange">
+    <input type="range" min="1" [max]="video_width" [(ngModel)]="center_x" class="slider" id="myRange" class="slider-width">
     <p>Y:</p>
-    <input type="range" min="1" [max]="video_height" [(ngModel)]="center_y" class="slider" id="myRange">
+    <input type="range" min="1" [max]="video_height" [(ngModel)]="center_y" class="slider" id="myRange" class="slider-width">
   </div>
