@@ -18,7 +18,6 @@ export class FrameExtractorComponent {
   video_width: number = 720;
   
   onVideoLoaded() {
-
     // console.log(this.videoElement.nativeElement.currentTime);
     // this.videoElement.nativeElement.currentTime =0;
     let h = this.videoElement.nativeElement.clientHeight;
@@ -28,22 +27,28 @@ export class FrameExtractorComponent {
     this.center_y = this.video_height/2;
     this.center_x = this.video_width/2;
     console.log(h,w);
-    // this.nextFrame()
-    
   }
   mouseDown(e:any){
     console.log("ciao")
-    // console.log(e.clientX);
-    // this.center_x = e.clientX;
-    // this.center_y = e.clientY;
-    console.log("New center: (", this.center_x, ", ", this.center_y, ")");
-    this.isDragging = true;
+    // click on the video frame and get the coordinates with respect to the video frame
+    console.log("Click coordinates with respect to the video frame: (", e.offsetX, ",", e.offsetY, ")");
+    // If the click is inside the circle, then start dragging, otherwise set the circle center to the click coordinates
+    if (Math.sqrt( (e.offsetX-this.center_x)*(e.offsetX-this.center_x) + (e.offsetY-this.center_y)*(e.offsetY-this.center_y) ) < this.radius){
+      this.isDragging = true;
+      console.log("Dragging circle");
+    }
+    else{
+      this.center_x = e.offsetX;
+      this.center_y = e.offsetY;
+      console.log("Setting circle center to click coordinates");
+    }
   }
   mouseUp(e:any){
     this.isDragging = false;
   }
   mouseMove(e:any){
-    if (this.isDragging && e.clientX > this.center_x - this.radius && e.clientX < this.center_x + this.radius && e.clientY > this.center_y - this.radius && e.clientY < this.center_y + this.radius){
+    // Circle must not go out of the video
+    if (this.isDragging && this.center_x + e.movementX > 0 && this.center_x + e.movementX < this.video_width && this.center_y + e.movementY > 0 && this.center_y + e.movementY < this.video_height){
       this.center_x = this.center_x + e.movementX;
       this.center_y = this.center_y + e.movementY;
       // this.radius = Math.sqrt( this.cur_center_x*this.cur_center_x +
@@ -53,13 +58,12 @@ export class FrameExtractorComponent {
   }
   nextFrame(){
     this.videoElement.nativeElement.currentTime +=1/this.fps;
-    console.log(this.videoElement.nativeElement.currentTime);
-    console.log(this.videoElement.nativeElement.duration);
-    console.log(this.videoElement.nativeElement);
+    console.log("current time: ",this.videoElement.nativeElement.currentTime);
   }
 
   previousFrame(){
     this.videoElement.nativeElement.currentTime -=1/this.fps;
+    console.log("current time: ",this.videoElement.nativeElement.currentTime);
   }
 
   onMouseWheelScroll(e:any){
