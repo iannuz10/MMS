@@ -34,8 +34,8 @@ export class FrameExtractorComponent {
   mouseDown(e:any){
     console.log("ciao")
     // console.log(e.clientX);
-    this.center_x = e.clientX;
-    this.center_y = e.clientY;
+    // this.center_x = e.clientX;
+    // this.center_y = e.clientY;
     console.log("New center: (", this.center_x, ", ", this.center_y, ")");
     this.isDragging = true;
   }
@@ -43,11 +43,11 @@ export class FrameExtractorComponent {
     this.isDragging = false;
   }
   mouseMove(e:any){
-    if (this.isDragging){
-      this.cur_center_x = e.clientX - this.center_x;
-      this.cur_center_y = e.clientY - this.center_y;
-      this.radius = Math.sqrt( this.cur_center_x*this.cur_center_x +
-                               this.cur_center_y*this.cur_center_y );
+    if (this.isDragging && e.clientX > this.center_x - this.radius && e.clientX < this.center_x + this.radius && e.clientY > this.center_y - this.radius && e.clientY < this.center_y + this.radius){
+      this.center_x = this.center_x + e.movementX;
+      this.center_y = this.center_y + e.movementY;
+      // this.radius = Math.sqrt( this.cur_center_x*this.cur_center_x +
+      //                          this.cur_center_y*this.cur_center_y );
       // console.log("Current radius: (", this.radius, ")");
     }
   }
