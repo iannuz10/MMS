@@ -1,5 +1,5 @@
 
-<video #videoElement [height]="video_height" (loadedmetadata)="onVideoLoaded()" (mousedown)="mouseDown($event)" (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" style="position: absolute; top: 10px; left: 10px;"
+<video #videoElement [height]="video_height" (loadedmetadata)="onVideoLoaded()" (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" style="position: absolute; top: 10px; left: 10px;"
 src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4">
 </video>
 

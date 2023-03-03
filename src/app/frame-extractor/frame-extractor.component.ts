@@ -62,6 +62,15 @@ export class FrameExtractorComponent {
     this.videoElement.nativeElement.currentTime -=1/this.fps;
   }
 
+  onMouseWheelScroll(e:any){
+    if (e.deltaY > 0){
+      this.radius -= 1;
+    }
+    else{
+      this.radius += 1;
+    }
+  }
+
   ngOnInit() {
     // You can also initialize the float field in the ngOnInit() method
     this.fps = 20;
