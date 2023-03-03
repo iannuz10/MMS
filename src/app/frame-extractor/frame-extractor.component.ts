@@ -52,7 +52,7 @@ export class FrameExtractorComponent {
     }
   }
   nextFrame(){
-    this.videoElement.nativeElement.currentTime +=1;
+    this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log(this.videoElement.nativeElement.currentTime);
     console.log(this.videoElement.nativeElement.duration);
     console.log(this.videoElement.nativeElement);
