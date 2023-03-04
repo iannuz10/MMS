@@ -1,4 +1,5 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-frame-extractor',
@@ -9,14 +10,15 @@ export class FrameExtractorComponent {
   @ViewChild('videoElement') videoElement!: ElementRef;
   fps!: number;
   isDragging: boolean = false;
+  video_height!: number;
+  video_width!: number;
+  selectedSector!: string;
+
   center_x: number = 0;
   center_y: number = 0;
   radius: number = 20;
-  cur_center_x: number = 0;
-  cur_center_y: number = 0;
   // Set the hight to 75% of the screen height
-  video_height!: number;
-  video_width!: number;
+  
   
   onVideoLoaded() {
     // console.log(this.videoElement.nativeElement.currentTime);
@@ -79,6 +81,8 @@ export class FrameExtractorComponent {
       this.radius += 1;
     }
   }
+
+
 
   ngOnInit() {
     // You can also initialize the float field in the ngOnInit() method

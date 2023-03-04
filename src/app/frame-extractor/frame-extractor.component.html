@@ -7,10 +7,10 @@
     </div>
     <div class="controls-container">
       <div class="button-container">
-        <select name="sector" id="sector-select">
+        <select name="sector" id="sector-select" [(ngModel)]="selectedSector">
           <option value="ZP">Zona pellucida</option>
           <option value="PS">Perivelline space</option>
-          <option value="Cyto">Cytoplasm</option>
+          <option value="Cyto" selected>Cytoplasm</option>
         </select>
         <button (click)="previousFrame()">Previous Frame</button>
         <button (click)="nextFrame()">Next Frame</button>
