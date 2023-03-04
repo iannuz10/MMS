@@ -82,8 +82,6 @@ export class FrameExtractorComponent {
     }
   }
 
-
-
   ngOnInit() {
     // You can also initialize the float field in the ngOnInit() method
     this.fps = 20;
