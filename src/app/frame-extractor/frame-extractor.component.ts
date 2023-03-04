@@ -14,8 +14,9 @@ export class FrameExtractorComponent {
   radius: number = 20;
   cur_center_x: number = 0;
   cur_center_y: number = 0;
-  video_height: number = 400;
-  video_width: number = 720;
+  // Set the hight to 75% of the screen height
+  video_height!: number;
+  video_width!: number;
   
   onVideoLoaded() {
     // console.log(this.videoElement.nativeElement.currentTime);
@@ -29,7 +30,6 @@ export class FrameExtractorComponent {
     console.log(h,w);
   }
   mouseDown(e:any){
-    console.log("ciao")
     // click on the video frame and get the coordinates with respect to the video frame
     console.log("Click coordinates with respect to the video frame: (", e.offsetX, ",", e.offsetY, ")");
     // If the click is inside the circle, then start dragging, otherwise set the circle center to the click coordinates
@@ -63,6 +63,11 @@ export class FrameExtractorComponent {
 
   previousFrame(){
     this.videoElement.nativeElement.currentTime -=1/this.fps;
+    console.log("current time: ",this.videoElement.nativeElement.currentTime);
+  }
+
+  skipFrame(){
+    this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
   }
 

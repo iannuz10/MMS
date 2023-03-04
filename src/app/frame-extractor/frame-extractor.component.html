@@ -1,26 +1,35 @@
-
-<video #videoElement [height]="video_height" (loadedmetadata)="onVideoLoaded()" (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" style="position: absolute; top: 10px; left: 10px;"
-src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4">
-</video>
-
-<button (click)="previousFrame()" style="position: absolute; top: 420px; left: 10px;">
-    Previous Frame
-</button>
-<button (click)="nextFrame()" style="position: absolute; top: 420px; left: 130px;">
-    Next Frame
-</button>
-
-
-<svg [attr.height]="video_height" [attr.width]="video_width" style="position: absolute; top: 10px; left: 10px; z-index:1; pointer-events: none;">
-    <circle [attr.cx]="center_x" [attr.cy]="center_y" [attr.r]="radius" stroke="gray" 
-    stroke-width="5" fill-opacity="0%" />
-</svg>
-
-<div style="position: absolute; top: 440px; left: 10px;">
-    <p>Radius:</p>
-    <input type="range" min="1" [max]="video_height" [(ngModel)]="radius" class="slider-width">
-    <p>X:</p>
-    <input type="range" min="1" [max]="video_width" [(ngModel)]="center_x" class="slider" id="myRange" class="slider-width">
-    <p>Y:</p>
-    <input type="range" min="1" [max]="video_height" [(ngModel)]="center_y" class="slider" id="myRange" class="slider-width">
+<div class="container">
+    <div class="video-container">
+      <video #videoElement (loadedmetadata)="onVideoLoaded()" (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"></video>
+      <svg [attr.height]="video_height" [attr.width]="video_width" style="pointer-events: none;">
+        <circle [attr.cx]="center_x" [attr.cy]="center_y" [attr.r]="radius" stroke="gray" stroke-width="5" fill-opacity="0%"></circle>
+      </svg>
+    </div>
+    <div class="controls-container">
+      <div class="button-container">
+        <select name="sector" id="sector-select">
+          <option value="ZP">Zona pellucida</option>
+          <option value="PS">Perivelline space</option>
+          <option value="Cyto">Cytoplasm</option>
+        </select>
+        <button (click)="previousFrame()">Previous Frame</button>
+        <button (click)="nextFrame()">Next Frame</button>
+        <button (click)="skipFrame()">Skip Frame</button>
+      </div>
+      <div class="slider-container">
+        <div class="slider">
+          <p>Radius:</p>
+          <input type="range" min="1" [max]="video_height" [(ngModel)]="radius">
+        </div>
+        <div class="slider">
+          <p>X:</p>
+          <input type="range" min="1" [max]="video_width" [(ngModel)]="center_x">
+        </div>
+        <div class="slider">
+          <p>Y:</p>
+          <input type="range" min="1" [max]="video_height" [(ngModel)]="center_y">
+        </div>
+      </div>
+    </div>
   </div>
+  
