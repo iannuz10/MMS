@@ -19,6 +19,12 @@ export class FrameExtractorComponent {
   center_y: number = 0;
   radius: number = 20;
   // Set the hight to 75% of the screen height
+
+  rect_x! : number ;
+  rect_y! : number ;
+  rect_w! : number ;
+  rect_h! : number ;
+  isDraggingRect: boolean = false;
   
   isZooming: boolean = false;
   z_x1!: number;
@@ -37,6 +43,8 @@ export class FrameExtractorComponent {
     this.center_y = this.video_height/2;
     this.center_x = this.video_width/2;
     console.log(h,w);
+
+    
 
     console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
     console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
@@ -78,6 +86,9 @@ export class FrameExtractorComponent {
         console.log("Setting circle center to click coordinates");
       }
     }else{
+      this.isDraggingRect = true;
+      this.rect_x = e.offsetX;
+      this.rect_y = e.offsetY;
       this.z_x1 = e.offsetX;
       this.z_y1 = e.offsetY;
       console.log("Zoom coordinate 1: (", e.offsetX, ",", e.offsetY, ")");
@@ -90,7 +101,13 @@ export class FrameExtractorComponent {
       this.z_y2 = e.offsetY;
       this.zoomIn();
       console.log("Zoom coordinate 2: (", e.offsetX, ",", e.offsetY, ")");
+      // this.rect_x = null;
+      // this.rect_y = null;
+      // this.rect_w = null;
+      // this.rect_h = null;
+      this.isDraggingRect = false;
     }
+
   }
 
   zoomIn(){
@@ -103,8 +120,13 @@ export class FrameExtractorComponent {
     this.z_x2*=scale_fac;
     this.z_y2*=scale_fac;
 
-    if((Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))) > 1){
+    if((Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))) >= 1.0){
       // Horizontal
+      console.log("Horizontal");
+      console.log("rapporto",this.canva.nativeElement.width/this.canva.nativeElement.height);
+      console.log("current rapporto",(Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)));
+      console.log("min",Math.min(this.z_x1, this.z_x2));
+
       let k = this.canva.nativeElement.width / (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
@@ -117,7 +139,9 @@ export class FrameExtractorComponent {
 
     }else{
       // Vertical
-      let k=this.canva.nativeElement.height / (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+      console.log("Vertical");
+
+      let k = this.canva.nativeElement.height / (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
         Math.min(this.z_x1, this.z_x2),
@@ -139,6 +163,10 @@ export class FrameExtractorComponent {
       // this.radius = Math.sqrt( this.cur_center_x*this.cur_center_x +
       //                          this.cur_center_y*this.cur_center_y );
       // console.log("Current radius: (", this.radius, ")");
+    }
+    if(this.isZooming){
+      this.rect_w = e.offsetX - this.rect_x;
+      this.rect_h = e.offsetY - this.rect_y;
     }
   }
   nextFrame(){
