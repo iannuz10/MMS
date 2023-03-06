@@ -1,4 +1,82 @@
-.container {
+video{
+    max-width: 100%;
+    height: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+svg{
+    max-width: 100%;
+    height: auto;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    pointer-events: none;
+}
+canvas{
+    max-width: 100%;
+    height: auto;
+    position: absolute;
+    top: 500px;
+    left: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.video-container{
+  width: 70vw;
+  max-width: 70vw;
+  position: relative;
+}
+
+.container{
+  display: flex;
+  /* flex-wrap: wrap; */
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.controls-container{
+  flex: 1;
+}
+
+.slider-container, .button-container{
+  margin: 10px;
+  flex-wrap: wrap;
+}
+
+/* @media screen and (max-width: 768px) {
+  .container{
+    flex-direction: column;
+  }
+  .video-container{
+    width: 100%;  
+    max-width: 100%;
+  }
+  .button-container{
+    width: 100%;
+    max-width: 100%;  ;
+  }
+  .container{
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+   */
+
+
+
+
+
+
+
+
+
+/* .container {
     display: flex;
     flex-direction: row;
     height: 90vh;
@@ -71,4 +149,4 @@
 
   input{
     width: 80vh;
-  }
+  } */

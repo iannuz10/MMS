@@ -25,7 +25,7 @@ export class FrameExtractorComponent {
   z_y1!: number;
   z_x2!: number;
   z_y2!: number;
-  
+
   onVideoLoaded() {
     // this.videoElement.nativeElement.currentTime = 0;
     console.log(this.canva.nativeElement);
@@ -38,18 +38,28 @@ export class FrameExtractorComponent {
     this.center_x = this.video_width/2;
     console.log(h,w);
 
+    console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
+    console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
+
     console.log("Video width: ", this.videoElement.nativeElement.videoWidth);
     console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
 
-    let contextCanva = this.canva.nativeElement.getContext('2d');
+    setTimeout(() => {
+      let contextCanva = this.canva.nativeElement.getContext('2d');
 
-    console.log("canva transform: ", contextCanva.getTransform());
+      console.log("canva transform: ", contextCanva.getTransform());
 
-    let ratio = w / this.videoElement.nativeElement.videoWidth;
-    contextCanva.scale(ratio, ratio);
-    console.log("canva transform: ", contextCanva.getTransform());
-    
-    contextCanva.drawImage(this.videoElement.nativeElement, 0, 0);
+      // let ratio = w / this.videoElement.nativeElement.videoWidth;
+      // console.log("ratio: ", ratio);
+      // this.canva.nativeElement.getContext('2d').scale(ratio, ratio);
+      console.log("canva transform: ", contextCanva.getTransform());
+      
+      contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+        ,0,0, w,h);
+    });
+  }
+
+  sleepFunc(){
 
   }
   mouseDown(e:any){
@@ -84,32 +94,37 @@ export class FrameExtractorComponent {
   }
 
   zoomIn(){
-    this.canva.nativeElement.getContext('2d').clearRect(0, 0, (this.canva.nativeElement.width)/0.252, (this.canva.nativeElement.height)/0.252);
-    console.log("current scale: ", this.canva.nativeElement.getContext('2d').getTransform());
+    this.canva.nativeElement.getContext('2d').clearRect(0, 0, (this.canva.nativeElement.width), (this.canva.nativeElement.height));
 
-    let maxDim = Math.max((Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2)/0.252), ((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))/0.252))
-    let zoomRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)));
+    let scale_fac = this.videoElement.nativeElement.videoWidth/this.canva.nativeElement.width;
+
+    this.z_x1*=scale_fac;
+    this.z_y1*=scale_fac;
+    this.z_x2*=scale_fac;
+    this.z_y2*=scale_fac;
+
     if((Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))) > 1){
       // Horizontal
-      let k=this.canva.nativeElement.width / (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
+      let k = this.canva.nativeElement.width / (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
-        Math.min(this.z_x1, this.z_x2)/0.252, 
-        Math.min(this.z_y1, this.z_y2)/0.252,
-        (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/0.252,
-        (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))/0.252,
-        0, 0, this.canva.nativeElement.width/0.252, (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))*k/0.252
+        Math.min(this.z_x1, this.z_x2),
+        Math.min(this.z_y1, this.z_y2),
+        (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2)),
+        (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)),
+        0, 0, this.canva.nativeElement.width, (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))*k
       );
+
     }else{
       // Vertical
       let k=this.canva.nativeElement.height / (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
-        Math.min(this.z_x1, this.z_x2)/0.252, 
-        Math.min(this.z_y1, this.z_y2)/0.252,
-        (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/0.252,
-        (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))/0.252,
-        0, 0, (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))*k/0.252, this.canva.nativeElement.height/0.252
+        Math.min(this.z_x1, this.z_x2),
+        Math.min(this.z_y1, this.z_y2),
+        (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2)),
+        (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)),
+        0, 0, (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))*k, this.canva.nativeElement.height
       );
     }
     this.isZooming = false;
@@ -129,21 +144,24 @@ export class FrameExtractorComponent {
   nextFrame(){
     this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0);
+    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0 ,0 , this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+      ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
   }
 
   previousFrame(){
     this.videoElement.nativeElement.currentTime -=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0);
+    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement, 0, 0 , this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+      ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
   }
 
   skipFrame(){
     this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0);
+    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+      ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
   }
 
@@ -157,13 +175,14 @@ export class FrameExtractorComponent {
   }
 
   onWindowResize(e:any){
+    console.log("Window resized")
     let h = this.videoElement.nativeElement.clientHeight;
     let w = this.videoElement.nativeElement.clientWidth;
     this.video_height = h;
     this.video_width = w;
-    this.canva.nativeElement.height = h;
-    this.canva.nativeElement.width = w;
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0);
+    // this.canva.nativeElement.height = h;
+    // this.canva.nativeElement.width = w;
+    // this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0);
   }
 
   zoom(){
