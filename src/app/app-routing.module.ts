@@ -2,10 +2,13 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { FrameExtractorComponent } from './frame-extractor/frame-extractor.component';
 import { LoginComponent } from './login/login.component';
+import { MiddleLayerComponent } from './middle-layer/middle-layer.component';
+import { AuthGuard } from './services/auth.guard';
 
 const routes: Routes = [
   {path: '', component: LoginComponent},
-  {path: 'MainApp', component: FrameExtractorComponent},
+  {path: 'Middle', component: MiddleLayerComponent},
+  {path: 'MainApp', canActivate:[AuthGuard], component: FrameExtractorComponent, redirectTo:''},
 ];
 
 @NgModule({
