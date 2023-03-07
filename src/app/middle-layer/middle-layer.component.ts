@@ -29,11 +29,18 @@ export class MiddleLayerComponent implements OnInit{
     console.log('Code parameter value:', this.code);
 
     // Calls POST request and saves the token in the localStorage of the Browser
-    this.h.postToken(this.code!).subscribe(data=>{
-      console.log(data);
-      console.log(data.id_token);
-      localStorage.setItem('authToken', data.id_token);
-    });
+ 
+    if( localStorage.getItem('authToken') == null  || localStorage.getItem('authToken') == 'undefined' ){
+      console.log("Asking for a NEW TOKEN");
+      this.h.postToken(this.code!).subscribe(data=>{
+        console.log(data);
+        console.log(data.id_token);
+        localStorage.setItem('authToken', data.id_token);
+        console.log('Redirecting to: MainApp');
+        this.router.navigate(['MainApp']);
+      });
+    }
+    console.log('Skipping NEW TOKEN');
     console.log('Redirecting to: MainApp');
     this.router.navigate(['MainApp']);
   }
