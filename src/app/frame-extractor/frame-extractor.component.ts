@@ -9,12 +9,14 @@ import { FormsModule } from '@angular/forms';
 export class FrameExtractorComponent {
   @ViewChild('videoElement') videoElement!: ElementRef;
   @ViewChild('videoCanva') canva!: ElementRef;
+  @ViewChild('whiteCanva') whiteCanva!: ElementRef;
   fps!: number;
   isDragging: boolean = false;
   video_height!: number;
   video_width!: number;
   selectedSector!: string;
 
+  frameNumber: number = 0;
   center_x: number = 0;
   center_y: number = 0;
   radius: number = 20;
@@ -24,6 +26,8 @@ export class FrameExtractorComponent {
   rect_y! : number ;
   rect_w! : number ;
   rect_h! : number ;
+  rect_x1! : number ;
+  rect_y1! : number ;
   isDraggingRect: boolean = false;
   
   isZooming: boolean = false;
@@ -31,6 +35,8 @@ export class FrameExtractorComponent {
   z_y1!: number;
   z_x2!: number;
   z_y2!: number;
+
+  framesData: any[] = [];
 
   onVideoLoaded() {
     // this.videoElement.nativeElement.currentTime = 0;
@@ -44,7 +50,12 @@ export class FrameExtractorComponent {
     this.center_x = this.video_width/2;
     console.log(h,w);
 
-    
+    let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+    contextWhiteCanva.beginPath();
+    contextWhiteCanva.rect(0, 0, w, h);
+    contextWhiteCanva.fillStyle = "white";
+    contextWhiteCanva.fill();
+
 
     console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
     console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
@@ -89,6 +100,8 @@ export class FrameExtractorComponent {
       this.isDraggingRect = true;
       this.rect_x = e.offsetX;
       this.rect_y = e.offsetY;
+      this.rect_x1 = e.offsetX;
+      this.rect_y1 = e.offsetY;
       this.z_x1 = e.offsetX;
       this.z_y1 = e.offsetY;
       console.log("Zoom coordinate 1: (", e.offsetX, ",", e.offsetY, ")");
@@ -101,10 +114,6 @@ export class FrameExtractorComponent {
       this.z_y2 = e.offsetY;
       this.zoomIn();
       console.log("Zoom coordinate 2: (", e.offsetX, ",", e.offsetY, ")");
-      // this.rect_x = null;
-      // this.rect_y = null;
-      // this.rect_w = null;
-      // this.rect_h = null;
       this.isDraggingRect = false;
     }
 
@@ -115,18 +124,17 @@ export class FrameExtractorComponent {
 
     let scale_fac = this.videoElement.nativeElement.videoWidth/this.canva.nativeElement.width;
 
+    let originalRation = this.videoElement.nativeElement.videoWidth/this.videoElement.nativeElement.videoHeight
+    let currentRation = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+    console.log("originalRation",originalRation);
+    console.log("currentRation",currentRation);
+
     this.z_x1*=scale_fac;
     this.z_y1*=scale_fac;
     this.z_x2*=scale_fac;
     this.z_y2*=scale_fac;
 
-    if((Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))) >= 1.0){
-      // Horizontal
-      console.log("Horizontal");
-      console.log("rapporto",this.canva.nativeElement.width/this.canva.nativeElement.height);
-      console.log("current rapporto",(Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)));
-      console.log("min",Math.min(this.z_x1, this.z_x2));
-
+    if(currentRation > originalRation){
       let k = this.canva.nativeElement.width / (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
@@ -134,13 +142,9 @@ export class FrameExtractorComponent {
         Math.min(this.z_y1, this.z_y2),
         (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2)),
         (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)),
-        0, 0, this.canva.nativeElement.width, (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))*k
+        0, (this.videoElement.nativeElement.clientHeight/2)-((Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))*k/2), this.canva.nativeElement.width, (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2))*k
       );
-
-    }else{
-      // Vertical
-      console.log("Vertical");
-
+    } else {
       let k = this.canva.nativeElement.height / (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
@@ -148,10 +152,9 @@ export class FrameExtractorComponent {
         Math.min(this.z_y1, this.z_y2),
         (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2)),
         (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2)),
-        0, 0, (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))*k, this.canva.nativeElement.height
+        (this.videoElement.nativeElement.clientWidth/2)-((Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))*k/2), 0, (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))*k, this.canva.nativeElement.height
       );
     }
-    this.isZooming = false;
   }
 
 
@@ -165,16 +168,44 @@ export class FrameExtractorComponent {
       // console.log("Current radius: (", this.radius, ")");
     }
     if(this.isZooming){
-      this.rect_w = e.offsetX - this.rect_x;
-      this.rect_h = e.offsetY - this.rect_y;
+      let rectWidth = e.offsetX - this.rect_x1;
+      let rectHight = e.offsetY - this.rect_y1;
+      
+      if(rectWidth > 0 && rectHight > 0){
+        this.rect_w = rectWidth;
+        this.rect_h = rectHight;
+      }
+      else if(rectWidth < 0 && rectHight > 0){
+        this.rect_w = -(rectWidth);
+        this.rect_h = rectHight;
+        this.rect_x = e.offsetX;
+      }
+      else if(rectWidth > 0 && rectHight < 0){
+        this.rect_w = rectWidth;
+        this.rect_h = -(rectHight);
+        this.rect_y = e.offsetY;
+      }
+      else if(rectWidth < 0 && rectHight < 0){
+        this.rect_w = -(rectWidth);
+        this.rect_h = -(rectHight);
+        this.rect_x = e.offsetX;
+        this.rect_y = e.offsetY;
+      }
     }
   }
   nextFrame(){
+    console.log("Frames data: ", this.framesData);
     this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0 ,0 , this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
       ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
+    this.framesData.push({
+      x: this.center_x, 
+      y: this.center_y,
+      r: this.radius
+    });
+    this.frameNumber++;
   }
 
   previousFrame(){
@@ -183,6 +214,8 @@ export class FrameExtractorComponent {
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement, 0, 0 , this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
       ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
+    this.framesData.pop();
+    this.frameNumber--;
   }
 
   skipFrame(){
@@ -191,6 +224,12 @@ export class FrameExtractorComponent {
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
       ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
+    this.framesData.push({
+      x: -1,
+      y: -1,
+      r: -1
+    });
+    this.frameNumber++;
   }
 
   onMouseWheelScroll(e:any){
@@ -206,15 +245,19 @@ export class FrameExtractorComponent {
     console.log("Window resized")
     let h = this.videoElement.nativeElement.clientHeight;
     let w = this.videoElement.nativeElement.clientWidth;
+    this.center_x = this.center_x * w / this.video_width;
+    this.center_y = this.center_y * h / this.video_height;
     this.video_height = h;
     this.video_width = w;
-    // this.canva.nativeElement.height = h;
-    // this.canva.nativeElement.width = w;
-    // this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0);
+    
   }
 
   zoom(){
     this.isZooming = true;
+  }
+
+  restoreView(){
+    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
   }
 
   ngOnInit() {
