@@ -43,30 +43,31 @@ export class FrameExtractorComponent {
 
   onVideoLoaded() {
     // this.videoElement.nativeElement.currentTime = 0;
-    console.log(this.canva.nativeElement);
-    
-    let h = this.videoElement.nativeElement.clientHeight;
-    let w = this.videoElement.nativeElement.clientWidth;
-    this.video_height = h;
-    this.video_width = w;
-    this.center_y = this.video_height/2;
-    this.center_x = this.video_width/2;
-    console.log(h,w);
-
-    let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
-    contextWhiteCanva.beginPath();
-    contextWhiteCanva.rect(0, 0, w, h);
-    contextWhiteCanva.fillStyle = "white";
-    contextWhiteCanva.fill();
-
-
-    console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
-    console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
-
-    console.log("Video width: ", this.videoElement.nativeElement.videoWidth);
-    console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
-
     setTimeout(() => {
+      console.log(this.canva.nativeElement);
+      
+      let h = this.videoElement.nativeElement.clientHeight;
+      let w = this.videoElement.nativeElement.clientWidth;
+      this.video_height = h;
+      this.video_width = w;
+      this.center_y = this.video_height/2;
+      this.center_x = this.video_width/2;
+      console.log(h,w);
+
+      let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+      contextWhiteCanva.beginPath();
+      contextWhiteCanva.rect(0, 0, w, h);
+      contextWhiteCanva.fillStyle = "white";
+      contextWhiteCanva.fill();
+
+
+      console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
+      console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
+
+      console.log("Video width: ", this.videoElement.nativeElement.videoWidth);
+      console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
+
+    
       let contextCanva = this.canva.nativeElement.getContext('2d');
 
       console.log("canva transform: ", contextCanva.getTransform());
@@ -265,7 +266,7 @@ export class FrameExtractorComponent {
 
   ngOnInit() {
     // You can also initialize the float field in the ngOnInit() method
-    this.fps = 20;
+    this.fps = 10;
   }
 }
 
