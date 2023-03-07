@@ -6,6 +6,9 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './frame-extractor.component.html',
   styleUrls: ['./frame-extractor.component.css']
 })
+
+
+
 export class FrameExtractorComponent {
   @ViewChild('videoElement') videoElement!: ElementRef;
   @ViewChild('videoCanva') canva!: ElementRef;
