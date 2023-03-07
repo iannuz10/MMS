@@ -6,17 +6,21 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FrameExtractorComponent } from './frame-extractor/frame-extractor.component';
 import { LoginComponent } from './login/login.component';
+import { MiddleLayerComponent } from './middle-layer/middle-layer.component';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
     AppComponent,
     FrameExtractorComponent,
-    LoginComponent
+    LoginComponent,
+    MiddleLayerComponent
   ],
   imports: [
     FormsModule,
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]
