@@ -42,9 +42,10 @@ export class FrameExtractorComponent {
   framesData: any[] = [];
 
   onVideoLoaded() {
-    // this.videoElement.nativeElement.currentTime = 0;
     setTimeout(() => {
-      console.log(this.canva.nativeElement);
+      // this.videoElement.nativeElement.currentTime = 0;
+      
+      console.log(this.videoElement.nativeElement);
       
       let h = this.videoElement.nativeElement.clientHeight;
       let w = this.videoElement.nativeElement.clientWidth;
@@ -60,6 +61,8 @@ export class FrameExtractorComponent {
       contextWhiteCanva.fillStyle = "white";
       contextWhiteCanva.fill();
 
+      this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
+      
 
       console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
       console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
@@ -68,17 +71,7 @@ export class FrameExtractorComponent {
       console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
 
     
-      let contextCanva = this.canva.nativeElement.getContext('2d');
-
-      console.log("canva transform: ", contextCanva.getTransform());
-
-      // let ratio = w / this.videoElement.nativeElement.videoWidth;
-      // console.log("ratio: ", ratio);
-      // this.canva.nativeElement.getContext('2d').scale(ratio, ratio);
-      console.log("canva transform: ", contextCanva.getTransform());
       
-      contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
-        ,0,0, w,h);
     });
   }
 
@@ -199,17 +192,15 @@ export class FrameExtractorComponent {
   }
   nextFrame(){
     console.log("Frames data: ", this.framesData);
-    this.videoElement.nativeElement.currentTime +=1/this.fps;
+    // this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0 ,0 , this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
-      ,0,0, this.video_width,this.video_height);
     this.isZooming = false;
     this.framesData.push({
       x: this.center_x, 
       y: this.center_y,
       r: this.radius
     });
-    this.frameNumber++;
+    this.videoElement.nativeElement.play();
   }
 
   previousFrame(){
@@ -225,8 +216,7 @@ export class FrameExtractorComponent {
   skipFrame(){
     this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
-      ,0,0, this.video_width,this.video_height);
+
     this.isZooming = false;
     this.framesData.push({
       x: -1,
@@ -234,6 +224,7 @@ export class FrameExtractorComponent {
       r: -1
     });
     this.frameNumber++;
+    this.videoElement.nativeElement.play();
   }
 
   onMouseWheelScroll(e:any){
@@ -268,5 +259,27 @@ export class FrameExtractorComponent {
     // You can also initialize the float field in the ngOnInit() method
     this.fps = 10;
   }
+
+  doSomethingWithFrame = (now:any, metadata:any) =>{
+    console.log(metadata.presentedFrames);
+    this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
+    this.videoElement.nativeElement.pause();
+    let contextCanva = this.canva.nativeElement.getContext('2d');
+
+      console.log("canva transform: ", contextCanva.getTransform());
+
+      // let ratio = w / this.videoElement.nativeElement.videoWidth;
+      // console.log("ratio: ", ratio);
+      // this.canva.nativeElement.getContext('2d').scale(ratio, ratio);
+      console.log("canva transform: ", contextCanva.getTransform());
+      
+      contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+        ,0,0, this.video_width,this.video_height);
+  }
+
+  videoEnded(e:any){
+    
+  }
+
 }
 
