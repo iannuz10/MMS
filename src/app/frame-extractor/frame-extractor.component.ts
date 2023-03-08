@@ -40,8 +40,8 @@ export class FrameExtractorComponent {
 
   token: string | null = null;
   static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/"
-
   videoUrl: string = FrameExtractorComponent.baseVideoUrl;
+  videoOffset: string ="";
   // If I'm dragging the mouse on the canvas
   // Move cirlce
   isDragging: boolean = false;
@@ -64,19 +64,20 @@ export class FrameExtractorComponent {
       console.log("Not Authorized to access the videos");
       this.rotuer.navigate([""]);
     }
-    this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(response=>
+    this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(complete =>
       {
-        console.log(response.status);
-        // localStorage.setItem('authToken', data.id_token);
+        console.log("Got this video URL: ", complete.body);
+        this.videoOffset = complete.body;
+        this.videoUrl = FrameExtractorComponent.baseVideoUrl + this.videoOffset;
       }
       , error => 
       {
         console.log("Encountered Error: ", error.status);
-        // localStorage.removeItem('authToken');
+        localStorage.removeItem('authToken');
         console.log("Redirecting to Authentication Page");
-        // this.rotuer.navigate(["Middle"]);
+        this.rotuer.navigate(["Middle"]);
         // Redirects to Google Login that redirects to MiddleComponent
-        // window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
+        window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
       }
       );
   }
@@ -318,7 +319,12 @@ export class FrameExtractorComponent {
 
   videoEnded(e:any){
     console.log("Video Ended");
+    this.httpC.postMaskList(this.framesData, this.videoOffset, this.token!).subscribe(data=>{
+      console.log(data);
+    });
+  // console.log("fire");
   }
+  
 
 }
 
