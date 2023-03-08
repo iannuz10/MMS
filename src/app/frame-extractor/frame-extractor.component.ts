@@ -13,31 +13,41 @@ export class FrameExtractorComponent {
   @ViewChild('videoElement') videoElement!: ElementRef;
   @ViewChild('videoCanva') canva!: ElementRef;
   @ViewChild('whiteCanva') whiteCanva!: ElementRef;
-  fps!: number;
-  isDragging: boolean = false;
+
+
   video_height!: number;
   video_width!: number;
   selectedSector!: string;
-
+  
   frameNumber: number = 0;
   center_x: number = 0;
   center_y: number = 0;
   radius: number = 20;
   // Set the hight to 75% of the screen height
-
+  
   rect_x! : number ;
   rect_y! : number ;
   rect_w! : number ;
   rect_h! : number ;
   rect_x1! : number ;
   rect_y1! : number ;
-  isDraggingRect: boolean = false;
   
-  isZooming: boolean = false;
   z_x1!: number;
   z_y1!: number;
   z_x2!: number;
   z_y2!: number;
+
+  // If I'm dragging the mouse on the canvas
+  // Move cirlce
+  isDragging: boolean = false;
+  // Draw Rectangle
+  isDraggingRect: boolean = false;
+
+  // Zoom toggle enabled
+  isZooming: boolean = false;
+  // If the current Image is Zoomed
+  isZoomed: boolean = false;
+
 
   framesData: any[] = [];
 
@@ -93,7 +103,7 @@ export class FrameExtractorComponent {
         this.center_y = e.offsetY;
         console.log("Setting circle center to click coordinates");
       }
-    }else{
+    }else if (this.isZooming && !this.isZoomed){
       this.isDraggingRect = true;
       this.rect_x = e.offsetX;
       this.rect_y = e.offsetY;
@@ -106,12 +116,14 @@ export class FrameExtractorComponent {
   }
   mouseUp(e:any){
     this.isDragging = false;
-    if(this.isZooming){
+    if(this.isZooming && !this.isZoomed){
       this.z_x2 = e.offsetX;
       this.z_y2 = e.offsetY;
       this.zoomIn();
       console.log("Zoom coordinate 2: (", e.offsetX, ",", e.offsetY, ")");
       this.isDraggingRect = false;
+      this.isZooming = false; 
+      this.isZoomed = true;
     }
 
   }
@@ -164,7 +176,7 @@ export class FrameExtractorComponent {
       //                          this.cur_center_y*this.cur_center_y );
       // console.log("Current radius: (", this.radius, ")");
     }
-    if(this.isZooming){
+    if(this.isZooming && !this.isZoomed){
       let rectWidth = e.offsetX - this.rect_x1;
       let rectHight = e.offsetY - this.rect_y1;
       
@@ -204,7 +216,7 @@ export class FrameExtractorComponent {
   }
 
   previousFrame(){
-    this.videoElement.nativeElement.currentTime -=1/this.fps;
+    // this.videoElement.nativeElement.currentTime -=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement, 0, 0 , this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
       ,0,0, this.video_width,this.video_height);
@@ -214,7 +226,7 @@ export class FrameExtractorComponent {
   }
 
   skipFrame(){
-    this.videoElement.nativeElement.currentTime +=1/this.fps;
+    // this.videoElement.nativeElement.currentTime +=1/this.fps;
     console.log("current time: ",this.videoElement.nativeElement.currentTime);
 
     this.isZooming = false;
@@ -223,7 +235,7 @@ export class FrameExtractorComponent {
       y: -1,
       r: -1
     });
-    this.frameNumber++;
+    // this.frameNumber++;
     this.videoElement.nativeElement.play();
   }
 
@@ -248,16 +260,16 @@ export class FrameExtractorComponent {
   }
 
   zoom(){
-    this.isZooming = true;
+      this.isZooming = true;
   }
 
   restoreView(){
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
+    this.isZoomed ? this.isZoomed = false : this.isZoomed = false;
   }
 
   ngOnInit() {
     // You can also initialize the float field in the ngOnInit() method
-    this.fps = 10;
   }
 
   doSomethingWithFrame = (now:any, metadata:any) =>{

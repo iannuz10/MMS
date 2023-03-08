@@ -17,6 +17,7 @@
         <div class="switch">
           <span class="text">Zoom:</span>
           <input (click)="zoom()" [(ngModel)]="isZooming" type="checkbox">
+          <input  [(ngModel)]="isZoomed" type="checkbox">
           <span class="checkbox"></span>
           <button (click)="restoreView()">Restore View</button>
         </div>
