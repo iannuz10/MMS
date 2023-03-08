@@ -1,6 +1,7 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpService } from '../services/http.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-frame-extractor',
@@ -53,11 +54,17 @@ export class FrameExtractorComponent {
   // If the current Image is Zoomed
   isZoomed: boolean = false;
 
+  // Activates the video player
+  isVideoActive = true;
+
   framesData: any[] = [];
 
-  constructor(private httpC: HttpService, private rotuer: Router){}
+  myFunction(){}
+
+  constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
 
   ngOnInit() {
+    
     // You can also initialize the float field in the ngOnInit() method
     this.token = localStorage.getItem('authToken');
     if(this.token == null){
@@ -67,6 +74,11 @@ export class FrameExtractorComponent {
     this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(complete =>
       {
         console.log("Got this video URL: ", complete.body);
+        console.log(!complete.body.includes(".mp4"));
+        if (!complete.body.includes(".mp4")){
+          // All videos reviewd
+          this.openSnackBar("All videos have been reviewed!!!");
+        }
         this.videoOffset = complete.body;
         this.videoUrl = FrameExtractorComponent.baseVideoUrl + this.videoOffset;
       }
@@ -114,6 +126,10 @@ export class FrameExtractorComponent {
     
       
     });
+  }
+
+  openSnackBar(toastMessage: string) {
+    this.snackBar.open(toastMessage, "Dismiss", {duration:20000});
   }
 
   sleepFunc(){
@@ -319,9 +335,11 @@ export class FrameExtractorComponent {
 
   videoEnded(e:any){
     console.log("Video Ended");
+    this.openSnackBar("Video Finished!!!");
     this.httpC.postMaskList(this.framesData, this.videoOffset, this.token!).subscribe(data=>{
       console.log(data);
     });
+    this.isVideoActive = false;
   // console.log("fire");
   }
   

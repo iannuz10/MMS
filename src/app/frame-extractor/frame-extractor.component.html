@@ -1,8 +1,8 @@
 <div class="container">
-    <div class="video-container">
+    <div class="video-container" *ngIf="isVideoActive">
       <video #videoElement (ended)="videoEnded($event)" (loadeddata)="onVideoLoaded()" 
              (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" 
-             (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
+             (window:mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
              (window:resize)="onWindowResize($event)" [src]="videoUrl">
       </video>
       <svg [attr.height]="video_height" [attr.width]="video_width" >

@@ -30,8 +30,9 @@ canvas{
 }
 
 .video-container{
-  width: 70vw;
+  width: 40vw;
   max-width: 70vw;
+  min-width: 30vw;
   position: relative;
 }
 
