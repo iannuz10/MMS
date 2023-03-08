@@ -1,5 +1,6 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { HttpService } from '../services/http.service';
 
 @Component({
   selector: 'app-frame-extractor',
@@ -37,6 +38,10 @@ export class FrameExtractorComponent {
   z_x2!: number;
   z_y2!: number;
 
+  token: string | null = null;
+  static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/"
+
+  videoUrl: string = FrameExtractorComponent.baseVideoUrl;
   // If I'm dragging the mouse on the canvas
   // Move cirlce
   isDragging: boolean = false;
@@ -48,8 +53,33 @@ export class FrameExtractorComponent {
   // If the current Image is Zoomed
   isZoomed: boolean = false;
 
-
   framesData: any[] = [];
+
+  constructor(private httpC: HttpService, private rotuer: Router){}
+
+  ngOnInit() {
+    // You can also initialize the float field in the ngOnInit() method
+    this.token = localStorage.getItem('authToken');
+    if(this.token == null){
+      console.log("Not Authorized to access the videos");
+      this.rotuer.navigate([""]);
+    }
+    this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(response=>
+      {
+        console.log(response.status);
+        // localStorage.setItem('authToken', data.id_token);
+      }
+      , error => 
+      {
+        console.log("Encountered Error: ", error.status);
+        // localStorage.removeItem('authToken');
+        console.log("Redirecting to Authentication Page");
+        // this.rotuer.navigate(["Middle"]);
+        // Redirects to Google Login that redirects to MiddleComponent
+        // window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
+      }
+      );
+  }
 
   onVideoLoaded() {
     setTimeout(() => {
@@ -268,9 +298,6 @@ export class FrameExtractorComponent {
     this.isZoomed ? this.isZoomed = false : this.isZoomed = false;
   }
 
-  ngOnInit() {
-    // You can also initialize the float field in the ngOnInit() method
-  }
 
   doSomethingWithFrame = (now:any, metadata:any) =>{
     console.log(metadata.presentedFrames);
@@ -290,7 +317,7 @@ export class FrameExtractorComponent {
   }
 
   videoEnded(e:any){
-    
+    console.log("Video Ended");
   }
 
 }

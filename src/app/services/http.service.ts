@@ -9,7 +9,8 @@ import { Message } from '../Message';
 export class HttpService {
 
   code: string = "4/0AWtgzh431cll-I_1LAVH_IwKm9fnyqoWR4oTJCBjN7plc3fDTgwX32RW4BuHXcJLcAx2WA";
-  url:string = "https://is0fiqsf2i.execute-api.eu-central-1.amazonaws.com/prod/auth/generate-token";
+  urlAuth:string = "https://is0fiqsf2i.execute-api.eu-central-1.amazonaws.com/prod/auth/generate-token";
+  urlVideoApi:string = "https://is0fiqsf2i.execute-api.eu-central-1.amazonaws.com/prod/video/get-random";
 
   constructor(private http: HttpClient) {
   }
@@ -25,6 +26,20 @@ export class HttpService {
     msg.code = cod;
     // const body = {'code': this.code};
     // console.log(header);
-    return this.http.post<any>(this.url, msg);
+    return this.http.post<any>(this.urlAuth, msg);
+  }
+
+  getVideo(token:any): Observable<any> {
+    const tk = `Bearer ${token}`;
+    console.log("my token:", tk)
+    const header = new HttpHeaders({
+      'Content-Type': 'application/json',
+      // 'Access-Control-Allow-Origin': '*',
+      'Authorization': tk
+      // 'Authorization': token
+    });
+    console.log(header)
+    const msg = new Message();
+    return this.http.get<any>(this.urlVideoApi);
   }
 }

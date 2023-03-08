@@ -1,6 +1,10 @@
 <div class="container">
     <div class="video-container">
-      <video (ended)="videoEnded($event)" #videoElement (loadeddata)="onVideoLoaded()" (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" (window:resize)="onWindowResize($event)" src="https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10.0-jSLmRpeC.mp4"></video>
+      <video #videoElement (ended)="videoEnded($event)" (loadeddata)="onVideoLoaded()" 
+             (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" 
+             (mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
+             (window:resize)="onWindowResize($event)" [src]="videoUrl">
+      </video>
       <svg [attr.height]="video_height" [attr.width]="video_width" >
         <circle [attr.cx]="center_x" [attr.cy]="center_y" [attr.r]="radius" stroke="blue" stroke-width="3" fill-opacity="0%"></circle>
         <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="4" fill-opacity="0%"></rect>
