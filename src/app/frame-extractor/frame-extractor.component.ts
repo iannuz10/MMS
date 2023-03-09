@@ -73,7 +73,8 @@ export class FrameExtractorComponent {
       this.rotuer.navigate([""]);
     }
     
-    // Get the first video to review
+    // // Get the first video to review
+    
     this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(complete =>
       {
         console.log("Got this video URL: ", complete.body);

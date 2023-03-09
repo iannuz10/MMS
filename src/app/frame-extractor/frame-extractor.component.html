@@ -3,7 +3,7 @@
       <video #videoElement (ended)="videoEnded($event)" (loadeddata)="onVideoLoaded()" 
              (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" 
              (window:mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
-              (window:resize)="onWindowResize($event)" [src]="videoUrl">
+              (window:resize)="onWindowResize($event)" [src]="videoUrl"> <!-- src="https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10.0-jSLmRpeC.mp4" Move comment  -->
       </video>
       <svg [attr.height]="video_height" [attr.width]="video_width" >
         <circle [attr.cx]="center_x" [attr.cy]="center_y" [attr.r]="radius" stroke="blue" stroke-width="3" fill-opacity="0%"></circle>
@@ -14,29 +14,34 @@
     </div>
     <div class="controls-container">
       <div class="button-container">
-        <button (click)="nextFrame()">Next Frame</button>
-        <button (click)="skipFrame()">Skip Frame</button>
+        <button mat-raised-button color="primary" (click)="nextFrame()">Next Frame</button>
+        <button mat-raised-button color="primary" (click)="skipFrame()">Skip Frame</button>
         <!-- <input (click)="zoom()" type="checkbox" > -->
         <div class="switch">
-          <span class="text">Zoom:</span>
-          <input (click)="zoom()" [(ngModel)]="isZooming" type="checkbox">
-          <input  [(ngModel)]="isZoomed" type="checkbox">
+          <mat-slide-toggle (click)="zoom()" [(ngModel)]="isZooming">Zoom</mat-slide-toggle>
+          <!-- <input  [(ngModel)]="isZoomed" type="checkbox"> -->
           <span class="checkbox"></span>
-          <button (click)="restoreView()">Restore View</button>
+          <button mat-icon-button color="primary" aria-label="Restore View" (click)="restoreView()"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="home"></mat-icon></button>
         </div>
       </div>
       <div class="slider-container">
         <div class="slider">
           <p>Radius:</p>
-          <input type="range" min="1" [max]="video_height/2" [(ngModel)]="radius">
+          <mat-slider min="1" [max]="video_height/2" >
+            <input matSliderThumb [(ngModel)]="radius">
+          </mat-slider>
         </div>
         <div class="slider">
           <p>X:</p>
-          <input type="range" min="1" [max]="video_width" [(ngModel)]="center_x">
+          <mat-slider min="1" [max]="video_width" >
+            <input matSliderThumb [(ngModel)]="center_x">
+          </mat-slider>
         </div>
         <div class="slider">
           <p>Y:</p>
-          <input type="range" min="1" [max]="video_height" [(ngModel)]="center_y">
+          <mat-slider min="1" [max]="video_height" >
+            <input matSliderThumb [(ngModel)]="center_y">
+          </mat-slider>
         </div>
       </div>
     </div>
