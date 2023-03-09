@@ -436,4 +436,9 @@ export class FrameExtractorComponent {
 
     return {X, Y, R};
   }
+
+  navigateTo(url:string){
+    console.log("Navigating to:", url);
+    this.rotuer.navigate([url]);
+  }
 }
