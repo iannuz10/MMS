@@ -14,6 +14,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import {MatSliderModule} from '@angular/material/slider';
 import {MatIconModule} from '@angular/material/icon';
+import { CoolSocialLoginButtonsModule } from '@angular-cool/social-login-buttons';
+import { MatToolbarModule } from '@angular/material/toolbar';
 
 @NgModule({
   declarations: [
@@ -32,7 +34,9 @@ import {MatIconModule} from '@angular/material/icon';
     MatButtonModule,
     MatSlideToggleModule,
     MatSliderModule,
-    MatIconModule
+    MatIconModule,
+    CoolSocialLoginButtonsModule,
+    MatToolbarModule
   ],
   providers: [],
   bootstrap: [AppComponent]
