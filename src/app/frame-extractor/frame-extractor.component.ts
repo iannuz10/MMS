@@ -264,11 +264,32 @@ export class FrameExtractorComponent {
   nextFrame(){
     console.log("Frames data: ", this.maskData);
     this.isZooming = false;
+
+    // Scale coefficient to original video size
+    let originalCoef = this.videoElement.nativeElement.videoWidth/this.video_width;
+
+    var X = this.center_x;
+    var Y = this.center_y;
+    var R = this.radius;
+
+    if(this.isZoomed){
+      var {X,Y,R} = this.scaleBack(0,0,0);
+    }
+    
+
+    X *= originalCoef;
+    Y *= originalCoef;
+    R *= originalCoef;    
+
+    console.log("X: ", X, "\nY: ", Y, "\nR: ", R);
+
+    console.log("original Size: ", this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight);
+
     // Save selection data
     this.maskData.push({
-      x: this.center_x, 
-      y: this.center_y,
-      r: this.radius
+      x: X, 
+      y: Y,
+      r: R
     });
     // Go to next frame
     this.videoElement.nativeElement.play();
@@ -307,6 +328,7 @@ export class FrameExtractorComponent {
     this.radius = this.radius * w / this.video_width;
     this.video_height = h;
     this.video_width = w;
+    this.isZoomed = false;
   }
 
   // Enable zooming
@@ -317,7 +339,7 @@ export class FrameExtractorComponent {
   // Go back to full video view
   restoreView(){
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
-    this.isZoomed ? this.isZoomed = false : this.isZoomed = false;
+    this.isZoomed = false;
   }
 
   // Frame by frame callback
@@ -356,5 +378,62 @@ export class FrameExtractorComponent {
 
   openSnackBar(toastMessage: string) {
     this.snackBar.open(toastMessage, "Dismiss", {duration:20000});
+  }
+
+  scaleBack(X : number, Y : number, R : number){
+    // let scale_fac = this.videoElement.nativeElement.videoWidth/this.canva.nativeElement.width; 
+
+    let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
+    let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+    
+
+    let Cy = this.videoElement.nativeElement.clientHeight;
+    let Cx = this.videoElement.nativeElement.clientWidth;
+
+    let minX = this.z_x1;
+    let minY = this.z_y1;
+
+    let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
+    let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    let circleCenterX;
+    let circleCenterY;
+    let circleRadius;
+
+    if(originalRatio < currentRatio){
+      console.log("horizontal condition");
+
+      let k = Cx / rectWidth;
+
+      let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2)); 
+
+      circleCenterX = (this.center_x / k) + minX;
+      circleCenterY = ((this.center_y - top) / k) + minY;
+
+      circleRadius = this.radius / k;
+
+      console.log("Circle center: ", circleCenterX, circleCenterY);
+      console.log("Circle radius: ", circleRadius);
+    } else {
+      console.log("vertical condition");
+      let k = Cy / rectHeight;
+
+      let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2)); 
+
+      circleCenterX = ((this.center_x - left) / k) + minX;
+      circleCenterY = (this.center_y / k) + minY;
+
+      circleRadius = this.radius / k;
+
+      console.log("Circle center: ", circleCenterX, circleCenterY);
+      console.log("Circle radius: ", circleRadius);
+    }
+
+    // Scale the circle center and radius to the original video size
+    X = circleCenterX;
+    Y = circleCenterY;
+    R = circleRadius;
+
+    return {X, Y, R};
   }
 }

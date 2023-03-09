@@ -59,11 +59,16 @@ button{
 }
 
 .switch{
-  margin-top: 10px;
+  margin: 10px;
 }
 
 mat-slider{
   width: 30vw;
+  margin: 10px;
+}
+
+p{
+  margin: 10px;
 }
 
 /* @media screen and (max-width: 768px) {
