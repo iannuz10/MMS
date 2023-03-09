@@ -15,11 +15,6 @@ svg{
   z-index: 4;
   pointer-events: none;
 }
-
-#whiteCanva{
-  z-index: 4 !important;
-}
-
 canvas{
   max-width: 100%;
   height: auto;
@@ -30,9 +25,12 @@ canvas{
   pointer-events: none;
 }
 
+#whiteCanva{
+  z-index: 4 !important;
+}
 
 .video-container{
-  width: 45vw;
+  width: 40vw;
   max-width: 70vw;
   min-width: 30vw;
   position: relative;
