@@ -1,58 +1,65 @@
 <div class="container">
-    <div class="video-container" *ngIf="isVideoActive">
-      <video #videoElement (ended)="videoEnded($event)" (loadeddata)="onVideoLoaded()" 
-             (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" 
-             (window:mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
-              (window:resize)="onWindowResize($event)" [src]="videoUrl">
-      </video>
-      <svg [attr.height]="video_height" [attr.width]="video_width" >
-        <circle [attr.cx]="center_x" [attr.cy]="center_y" [attr.r]="radius" [attr.stroke]="circleColor" stroke-width="3" fill-opacity="0%"></circle>
-        <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="4" fill-opacity="0%"></rect>
-      </svg>
-      <canvas #whiteCanva [height]="video_height" [width]="video_width"></canvas>
-      <canvas #videoCanva [height]="video_height" [width]="video_width" ></canvas>
+  <div class="video-container" *ngIf="isVideoActive">
+    <video #videoElement (ended)="videoEnded($event)" (loadeddata)="onVideoLoaded()" 
+            (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" 
+            (window:mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
+            (window:resize)="onWindowResize($event)" [src]="videoUrl">
+    </video>
+    <svg [attr.height]="video_height" [attr.width]="video_width" >
+      <circle [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>
+      <circle [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
+      <circle [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
+      <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="4" fill-opacity="0%"></rect>
+    </svg>
+    <canvas #whiteCanva [height]="video_height" [width]="video_width"></canvas>
+    <canvas #videoCanva [height]="video_height" [width]="video_width" ></canvas>
+    <div id="progBar-container">
+      <mat-progress-bar mode="determinate" [value]="currentProgress"></mat-progress-bar>
     </div>
-    <div class="controls-container" *ngIf="isVideoActive">
-      <div class="button-container">
-        <button mat-raised-button color="primary" (click)="nextFrame()">Next Frame</button>
-        <button mat-raised-button color="warn" (click)="skipFrame()">Skip Frame</button>
-        <h3>Single selection {{selectors.value}}</h3>
-        <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
-          <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
-          <mat-button-toggle [value]="selectorNames[1]">{{selectorNames[1]}}</mat-button-toggle>
-          <mat-button-toggle [value]="selectorNames[2]">{{selectorNames[2]}}</mat-button-toggle>
-        </mat-button-toggle-group>
-        <!-- <input (click)="zoom()" type="checkbox" > -->
-        <div class="switch">
-          <mat-slide-toggle *ngIf="!isZoomed" (click)="zoom()" [(ngModel)]="isZooming">Zoom</mat-slide-toggle>
-          <!-- <input  [(ngModel)]="isZoomed" type="checkbox"> -->
-          <button *ngIf="isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="restoreView()"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="home"></mat-icon></button>
-        </div>
-      </div>
-      <div class="slider-container">
-        <div class="slider">
-          <p>Radius:</p>
-          <mat-slider min="1" [max]="video_height/2" >
-            <input matSliderThumb [(ngModel)]="radius">
-          </mat-slider>
-        </div>
-        <div class="slider">
-          <p>X:</p>
-          <mat-slider min="1" [max]="video_width" >
-            <input matSliderThumb [(ngModel)]="center_x">
-          </mat-slider>
-        </div>
-        <div class="slider">
-          <p>Y:</p>
-          <mat-slider min="1" [max]="video_height" >
-            <input matSliderThumb [(ngModel)]="center_y">
-          </mat-slider>
-        </div>
+  </div>
+  <div class="controls-container" *ngIf="isVideoActive">
+    <div class="button-container">
+      <button mat-raised-button color="primary" (click)="nextFrame()">Next Frame</button>
+      <button mat-raised-button color="warn" (click)="skipFrame()">Skip Frame</button>
+      <h3>Single selection: {{selectors.value}}</h3>
+      <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
+        <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
+        <mat-button-toggle [value]="selectorNames[1]">{{selectorNames[1]}}</mat-button-toggle>
+        <mat-button-toggle [value]="selectorNames[2]">{{selectorNames[2]}}</mat-button-toggle>
+      </mat-button-toggle-group>
+      <div class="switch">
+        <!-- <mat-slide-toggle *ngIf="!isZoomed" (change)="isZooming ? zoom() : null" [(ngModel)]="isZooming">Zoom</mat-slide-toggle> -->
+        <!-- <input  [(ngModel)]="isZoomed" type="checkbox"> -->
+        <p *ngIf="!isZoomed">Zoom:</p>
+        <button *ngIf="!isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="zoom()" [(ngModel)]="isZooming"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="picture_in_picture"></mat-icon></button>
+        <p *ngIf="isZoomed">Home:</p>
+        <button *ngIf="isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="restoreView()"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="home"></mat-icon></button>
       </div>
     </div>
-    <div class="button-container" *ngIf="!isVideoActive">
-      <button mat-raised-button color="primary" (click)="navigateTo('Middle')">Try another Video!</button>
-      <button mat-raised-button color="warn" (click)="navigateTo('Login')">Exit</button>
+    <div class="slider-container">
+      <div class="slider">
+        <p>Radius:</p>
+        <mat-slider min="1" [max]="video_height/2" >
+          <input matSliderThumb (ngModelChange)="onSliderRadiusChange()" [(ngModel)]="radius">
+        </mat-slider>
+      </div>
+      <div class="slider">
+        <p>X:</p>
+        <mat-slider min="1" [max]="video_width" >
+          <input matSliderThumb (ngModelChange)="onSliderXChange()" [(ngModel)]="center_x">
+        </mat-slider>
+      </div>
+      <div class="slider">
+        <p>Y:</p>
+        <mat-slider min="1" [max]="video_height" >
+          <input matSliderThumb (ngModelChange)="onSliderYChange()" [(ngModel)]="center_y">
+        </mat-slider>
+      </div>
     </div>
+  </div>
+  <div class="button-container" *ngIf="!isVideoActive">
+    <button mat-raised-button color="primary" (click)="navigateTo('Middle')">Try another Video!</button>
+    <button mat-raised-button color="warn" (click)="navigateTo('Login')">Exit</button>
+  </div>
 </div>
  

@@ -35,10 +35,11 @@ button{
 }
 
 .video-container{
-  width: 45vw;
+  width: 35vw;
   max-width: 70vw;
   min-width: 30vw;
   position: relative;
+  margin: 20px;
 }
 
 .container{
@@ -53,13 +54,23 @@ button{
   flex: 1;
 }
 
+#progBar-container{
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
 .slider-container, .button-container{
-  margin: 10px;
+  margin: 5px;
   flex-wrap: wrap;
 }
 
 .switch{
-  margin: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  height: 50px;
+  margin-top: 20px;
 }
 
 mat-slider{

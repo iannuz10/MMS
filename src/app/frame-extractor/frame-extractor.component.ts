@@ -21,19 +21,32 @@ export class FrameExtractorComponent {
   video_width!: number;
   selectedSector!: string;
   
-  frameNumber: number = 0;
+  // Current circle position
   center_x: number = 0;
   center_y: number = 0;
   radius: number = 60;
-  // Set the hight to 75% of the screen height
+
+  // Circles values
+  red_x: number = this.center_x;
+  red_y: number = this.center_y;
+  red_r: number = this.radius;
+  green_x: number = this.center_x;
+  green_y: number = this.center_y;
+  green_r: number = this.radius+20;
+  blue_x: number = this.center_x;
+  blue_y: number = this.center_y;
+  blue_r: number = this.radius+40;
   
+  // Rectangle vertices
   rect_x! : number ;
   rect_y! : number ;
   rect_w! : number ;
   rect_h! : number ;
-  rect_x1! : number ;
+  // Necessary to draw the rectangle
+  rect_x1! : number ; 
   rect_y1! : number ;
   
+  // Zoom rectangle vertices
   z_x1!: number;
   z_y1!: number;
   z_x2!: number;
@@ -64,12 +77,18 @@ export class FrameExtractorComponent {
 
   // Index of the membrane selector toggles
   
-  maskData: any[] = [];
   selectorNames: string[] = ['red', 'green', 'blue'];
   selectorColors: string[] = ['red', 'green', 'blue'];
+  circleOpacity: any[] = [0.1, 0, 0];
+  strokeOpacity: any[] = [1, 0.2, 0.2];
   
   currentSelector = this.selectorNames[0];
   circleColor = this.selectorColors[0];
+
+  // Current frame number
+  currentProgress: number = 1;
+
+  Payload: any[] = [];
 
   constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
 
@@ -123,6 +142,15 @@ export class FrameExtractorComponent {
       this.video_width = w;
       this.center_y = this.video_height/2;
       this.center_x = this.video_width/2;
+
+      // Set the initial position of the circles
+      this.red_x = this.center_x;
+      this.red_y = this.center_y;
+      this.green_x = this.center_x;
+      this.green_y = this.center_y;
+      this.blue_x = this.center_x;
+      this.blue_y = this.center_y;
+
       console.log(h,w);
 
       // Set a white background to hide the video when zooming (WIP)
@@ -150,21 +178,77 @@ export class FrameExtractorComponent {
     switch(this.currentSelector){
       case this.selectorNames[0]:
         this.circleColor=this.selectorColors[0];
+        this.center_x = this.red_x;
+        this.center_y = this.red_y;
+        this.radius = this.red_r;
+        this.circleOpacity = [0.1, 0, 0];
+        this.strokeOpacity = [1, 0.2, 0.2];
         break;
       case this.selectorNames[1]:
         this.circleColor=this.selectorColors[1];
+        this.center_x = this.green_x;
+        this.center_y = this.green_y;
+        this.radius = this.green_r;
+        this.circleOpacity = [0, 0.1, 0];
+        this.strokeOpacity = [0.2, 1, 0.2];
         break;
       case this.selectorNames[2]:
         this.circleColor=this.selectorColors[2];
+        this.center_x = this.blue_x;
+        this.center_y = this.blue_y;
+        this.radius = this.blue_r;
+        this.circleOpacity = [0, 0, 0.1];
+        this.strokeOpacity = [0.2, 0.2, 1];
         break;
     }
    }
+
+   onCircleRadiusChange(currentVal: any){
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_r = currentVal;
+        this.radius = this.red_r;
+        break;
+      case this.selectorNames[1]:
+        this.green_r = currentVal;
+        this.radius = this.green_r;
+        break;
+      case this.selectorNames[2]:
+        this.blue_r = currentVal;
+        this.radius = this.blue_r;
+        break;
+    }
+  }
+
+  onCircleCenterChange(currentValX: any, currentValY: any){
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_x = currentValX;
+        this.red_y = currentValY;
+        this.center_x = this.red_x;
+        this.center_y = this.red_y;
+        break;
+      case this.selectorNames[1]:
+        this.green_x = currentValX;
+        this.green_y = currentValY;
+        this.center_x = this.green_x;
+        this.center_y = this.green_y;
+        break;
+      case this.selectorNames[2]:
+        this.blue_x = currentValX;
+        this.blue_y = currentValY;
+        this.center_x = this.blue_x;
+        this.center_y = this.blue_y;
+        break;
+    }
+  }
+
 
   mouseDown(e:any){
     // Click on the video frame and get the coordinates to move or set the circle
     if(!this.isZooming){
       console.log("Click coordinates with respect to the video frame: (", e.offsetX, ",", e.offsetY, ")");
-      console.log("Radius: (", this.radius, ")");
+      console.log("Radius: (", this.radius, ")");      
       
       // If the click is inside the circle, then start dragging 
       if (Math.sqrt( (e.offsetX-this.center_x)*(e.offsetX-this.center_x) + (e.offsetY-this.center_y)*(e.offsetY-this.center_y) ) < this.radius){
@@ -172,8 +256,10 @@ export class FrameExtractorComponent {
         console.log("Dragging circle");
       } else {
         // set the circle center to the click coordinates
-        this.center_x = e.offsetX;
-        this.center_y = e.offsetY;
+        this.onCircleCenterChange(e.offsetX, e.offsetY);
+        this.isDragging = true;
+        // this.center_x = e.offsetX;
+        // this.center_y = e.offsetY;
         console.log("Setting circle center to click coordinates");
       }
     } else if (this.isZooming && !this.isZoomed){
@@ -196,10 +282,11 @@ export class FrameExtractorComponent {
 
     // Zoom
     // Stop dragging the rectangle to zoom in
-    if(this.isZooming && !this.isZoomed){
+    if(this.isZooming && !this.isZoomed && this.z_x1){
       this.z_x2 = e.offsetX;
       this.z_y2 = e.offsetY;
       this.zoomIn();
+      this.adaptCirclesZoomIn();
       console.log("Zoom coordinate 2: (", e.offsetX, ",", e.offsetY, ")");
       this.isDraggingRect = false;
       this.isZooming = false; 
@@ -211,8 +298,9 @@ export class FrameExtractorComponent {
     // Moving circle 
     // Circle must not go out of the video
     if (this.isDragging && this.center_x + e.movementX > 0 && this.center_x + e.movementX < this.video_width && this.center_y + e.movementY > 0 && this.center_y + e.movementY < this.video_height){
-      this.center_x = this.center_x + e.movementX;
-      this.center_y = this.center_y + e.movementY;
+      this.onCircleCenterChange(this.center_x + e.movementX, this.center_y + e.movementY);
+      // this.center_x = this.center_x + e.movementX;
+      // this.center_y = this.center_y + e.movementY;
     }
     // Zoom
     // Drawing rectangle
@@ -266,9 +354,11 @@ export class FrameExtractorComponent {
     let scaledWidth = (Math.max(scaledX1, scaledX2) - Math.min(scaledX1, scaledX2));
     let scaledHeight = (Math.max(scaledY1, scaledY2) - Math.min(scaledY1, scaledY2));
 
+    let k: number;
+
     // Draw the zoomed area
     if(currentRatio > originalRatio){
-      let k = this.canva.nativeElement.width / scaledWidth;
+      k = this.canva.nativeElement.width / scaledWidth;
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
         Math.min(scaledX1, scaledX2),
@@ -278,7 +368,7 @@ export class FrameExtractorComponent {
         0, (this.videoElement.nativeElement.clientHeight/2)-(scaledHeight*k/2), this.canva.nativeElement.width, scaledHeight*k
       );
     } else {
-      let k = this.canva.nativeElement.height / scaledHeight;
+      k = this.canva.nativeElement.height / scaledHeight;
       console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
         Math.min(scaledX1, scaledX2),
@@ -288,54 +378,96 @@ export class FrameExtractorComponent {
         (this.videoElement.nativeElement.clientWidth/2)-(scaledWidth*k/2), 0, scaledWidth*k, this.canva.nativeElement.height
       );
     }
+    // Scale the coordinates of the circle and adjust the position of the circle to the zoomed area
   }
 
   nextFrame(){
-    console.log("Frames data: ", this.maskData);
+    // console.log("Frames data: ", this.maskData);
     this.isZooming = false;
 
     // Scale coefficient to original video size
     let originalCoef = this.videoElement.nativeElement.videoWidth/this.video_width;
 
-    var X = this.center_x;
-    var Y = this.center_y;
-    var R = this.radius;
+    let maskDataRed: any[] = [];
+    let maskDataGreen: any[] = [];
+    let maskDataBlue: any[] = [];
 
+    let redX = this.red_x;
+    let redY = this.red_y;
+    let redR = this.red_r;
+
+    let greenX = this.green_x;
+    let greenY = this.green_y;
+    let greenR = this.green_r;
+
+    let blueX = this.blue_x;
+    let blueY = this.blue_y;
+    let blueR = this.blue_r;
+    
     if(this.isZoomed){
-      var {X,Y,R} = this.scaleBack(0,0,0);
+      [redX, redY, redR] = this.scaleBack(this.red_x,this.red_y,this.red_r);
+      [greenX, greenY, greenR] = this.scaleBack(this.green_x,this.green_y,this.green_r);
+      [blueX, blueY, blueR] = this.scaleBack(this.blue_x,this.blue_y,this.blue_r);
     }
     
 
-    X *= originalCoef;
-    Y *= originalCoef;
-    R *= originalCoef;    
+    redX *= originalCoef;
+    redY *= originalCoef;
+    redR *= originalCoef;    
+    greenX *= originalCoef;
+    greenY *= originalCoef;
+    greenR *= originalCoef;
+    blueX *= originalCoef;
+    blueY *= originalCoef;
+    blueR *= originalCoef;
 
-    X.toFixed(2);
-    Y.toFixed(2);
-    R.toFixed(2);    
+    redX.toFixed(2);
+    redY.toFixed(2);
+    redR.toFixed(2);    
+    greenX.toFixed(2);
+    greenY.toFixed(2);
+    greenR.toFixed(2);
+    blueX.toFixed(2);
+    blueY.toFixed(2);
+    blueR.toFixed(2);
 
-    console.log("X: ", X, "\nY: ", Y, "\nR: ", R);
+    maskDataRed.push({
+      x: redX,
+      y: redY,
+      r: redR
+    });
 
-    console.log("original Size: ", this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight);
+    maskDataGreen.push({
+      x: greenX,
+      y: greenY,
+      r: greenR
+    });
+    
+    maskDataBlue.push({
+      x: blueX,
+      y: blueY,
+      r: blueR
+    });
 
     // Save selection data
-    this.maskData.push({
-      x: X, 
-      y: Y,
-      r: R
+    this.Payload.push({
+      r: maskDataRed, 
+      g: maskDataGreen,
+      b: maskDataBlue
     });
     // Go to next frame
     this.videoElement.nativeElement.play();
+    this.currentProgress = Math.trunc( (this.videoElement.nativeElement.currentTime / this.videoElement.nativeElement.duration) * 100) + 2;
+    console.log("currentProgress:", this.currentProgress);
   }
 
   skipFrame(){
-    console.log("Frames data: ", this.maskData);
     this.isZooming = false;
     // Frame skipped -> no selection
-    this.maskData.push({
-      x: -1,
-      y: -1,
-      r: -1
+    this.Payload.push({
+      r: [-1],
+      g: [-1],
+      b: [-1]
     });
     // Go to next frame
     this.videoElement.nativeElement.play();
@@ -344,10 +476,12 @@ export class FrameExtractorComponent {
   // Change the radius of the circle based on the scroll
   onMouseWheelScroll(e:any){
     if (e.deltaY > 0){
-      this.radius -= 1;
+      this.onCircleRadiusChange(this.radius - 1);
+      // this.radius -= 1;
     }
     else{
-      this.radius += 1;
+      this.onCircleRadiusChange(this.radius + 1);
+      // this.radius += 1;
     }
   }
 
@@ -356,9 +490,15 @@ export class FrameExtractorComponent {
     console.log("Window resized")
     let h = this.videoElement.nativeElement.clientHeight;
     let w = this.videoElement.nativeElement.clientWidth;
-    this.center_x = this.center_x * w / this.video_width;
-    this.center_y = this.center_y * h / this.video_height;
-    this.radius = this.radius * w / this.video_width;
+    this.red_x = this.red_x * w / this.video_width;
+    this.red_y = this.red_y * h / this.video_height;
+    this.red_r = this.red_r * w / this.video_width;
+    this.green_x = this.green_x * w / this.video_width;
+    this.green_y = this.green_y * h / this.video_height;
+    this.green_r = this.green_r * w / this.video_width;
+    this.blue_x = this.blue_x * w / this.video_width;
+    this.blue_y = this.blue_y * h / this.video_height;
+    this.blue_r = this.blue_r * w / this.video_width;
     this.video_height = h;
     this.video_width = w;
     this.isZoomed = false;
@@ -372,7 +512,8 @@ export class FrameExtractorComponent {
   // Go back to full video view
   restoreView(){
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
-    this.isZoomed = false;
+    this.isZoomed = false;    
+    this.adaptCirclesZoomOut();
   }
 
   // Frame by frame callback
@@ -402,15 +543,107 @@ export class FrameExtractorComponent {
     console.log("Video Ended");
     this.openSnackBar("Video Finished!!!");
     // Save the mask data API call
-    this.httpC.postMaskList(this.maskData, this.videoOffset, this.token!).subscribe(data=>{
-      console.log(data);
-    });
+    // ONLINE
+    // COMMENTA PER FARLO FUNZIONARE OFFLINE
+    // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
+    //   console.log(data);
+    // });
     this.isVideoActive = false;
   // console.log("fire");
   }
 
   openSnackBar(toastMessage: string) {
     this.snackBar.open(toastMessage, "Dismiss", {duration:20000});
+  }
+
+  adaptCirclesZoomIn(){
+    let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
+    let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    let Cy = this.videoElement.nativeElement.clientHeight;
+    let Cx = this.videoElement.nativeElement.clientWidth;
+
+    let minX = Math.min(this.z_x1, this.z_x2);
+    let minY = Math.min(this.z_y1, this.z_y2);
+
+    let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
+    let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    if (originalRatio > currentRatio){
+      let k = Cx / rectWidth;
+      let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2)); 
+      let scale_fac = originalRatio/currentRatio;
+
+      this.red_x = (this.red_x - minX)*k;
+      this.red_y = (this.red_y - minY)*k + top;
+      this.red_r = this.red_r*k/scale_fac;
+      this.green_x = (this.green_x - minX)*k;
+      this.green_y = (this.green_y - minY)*k + top;
+      this.green_r = this.green_r*k/scale_fac;
+      this.blue_x = (this.blue_x - minX)*k;
+      this.blue_y = (this.blue_y - minY)*k + top;
+      this.blue_r = this.blue_r*k/scale_fac;
+    }
+    else{
+      let k = Cy / rectHeight;
+      let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2));
+      let scale_fac = currentRatio/originalRatio;
+
+      this.red_x = (this.red_x - minX)*k + left;
+      this.red_y = (this.red_y - minY)*k;
+      this.red_r = this.red_r*k/scale_fac;
+      this.green_x = (this.green_x - minX)*k + left;
+      this.green_y = (this.green_y - minY)*k;
+      this.green_r = this.green_r*k/scale_fac;
+      this.blue_x = (this.blue_x - minX)*k + left;
+      this.blue_y = (this.blue_y - minY)*k;
+      this.blue_r = this.blue_r*k/scale_fac;
+    }
+  }
+
+  adaptCirclesZoomOut(){
+    let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
+    let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    let Cy = this.videoElement.nativeElement.clientHeight;
+    let Cx = this.videoElement.nativeElement.clientWidth;
+
+    let minX = Math.min(this.z_x1, this.z_x2);
+    let minY = Math.min(this.z_y1, this.z_y2);
+
+    let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
+    let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    if (originalRatio > currentRatio){
+      let k = Cx / rectWidth;
+      let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2));
+      let scale_fac = originalRatio/currentRatio;
+
+      this.red_x = (this.red_x)/k + minX;
+      this.red_y = (this.red_y - top)/k + minY;
+      this.red_r = this.red_r/k*scale_fac;
+      this.green_x = (this.green_x)/k + minX;
+      this.green_y = (this.green_y - top)/k + minY;
+      this.green_r = this.green_r/k*scale_fac;
+      this.blue_x = (this.blue_x)/k + minX;
+      this.blue_y = (this.blue_y - top)/k + minY;
+      this.blue_r = this.blue_r/k*scale_fac;
+    }
+    else{
+      let k = Cy / rectHeight;
+      let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2));
+      let scale_fac = currentRatio/originalRatio;
+
+      this.red_x = (this.red_x - left)/k + minX;
+      this.red_y = (this.red_y)/k + minY;
+      this.red_r = this.red_r/k*scale_fac;
+      this.green_x = (this.green_x - left)/k + minX;
+      this.green_y = (this.green_y)/k + minY;
+      this.green_r = this.green_r/k*scale_fac;
+      this.blue_x = (this.blue_x - left)/k + minX;
+      this.blue_y = (this.blue_y)/k + minY;
+      this.blue_r = this.blue_r/k*scale_fac;
+    }
   }
 
   scaleBack(X : number, Y : number, R : number){
@@ -423,8 +656,8 @@ export class FrameExtractorComponent {
     let Cy = this.videoElement.nativeElement.clientHeight;
     let Cx = this.videoElement.nativeElement.clientWidth;
 
-    let minX = this.z_x1;
-    let minY = this.z_y1;
+    let minX = Math.min(this.z_x1, this.z_x2);
+    let minY = Math.min(this.z_y1, this.z_y2);
 
     let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
     let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
@@ -440,10 +673,10 @@ export class FrameExtractorComponent {
 
       let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2)); 
 
-      circleCenterX = (this.center_x / k) + minX;
-      circleCenterY = ((this.center_y - top) / k) + minY;
+      circleCenterX = (X / k) + minX;
+      circleCenterY = ((Y - top) / k) + minY;
 
-      circleRadius = this.radius / k;
+      circleRadius = R / k;
 
       console.log("Circle center: ", circleCenterX, circleCenterY);
       console.log("Circle radius: ", circleRadius);
@@ -453,21 +686,50 @@ export class FrameExtractorComponent {
 
       let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2)); 
 
-      circleCenterX = ((this.center_x - left) / k) + minX;
-      circleCenterY = (this.center_y / k) + minY;
+      circleCenterX = ((X - left) / k) + minX;
+      circleCenterY = (Y / k) + minY;
 
-      circleRadius = this.radius / k;
+      circleRadius = R / k;
 
       console.log("Circle center: ", circleCenterX, circleCenterY);
       console.log("Circle radius: ", circleRadius);
     }
 
     // Scale the circle center and radius to the original video size
-    X = circleCenterX;
-    Y = circleCenterY;
-    R = circleRadius;
 
-    return {X, Y, R};
+    return [circleCenterX, circleCenterY, circleRadius];
+  }
+
+  onSliderRadiusChange(){
+    this.onCircleRadiusChange(this.radius);
+  }
+
+  onSliderXChange(){
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_x = this.center_x;
+        break;
+      case this.selectorNames[1]:
+        this.green_x = this.center_x;
+        break;
+      case this.selectorNames[2]:
+        this.blue_x = this.center_x;
+        break;
+    }
+  }
+
+  onSliderYChange(){
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_y = this.center_y;
+        break;
+      case this.selectorNames[1]:
+        this.green_y = this.center_y;
+        break;
+      case this.selectorNames[2]:
+        this.blue_y = this.center_y;
+        break;
+    }
   }
 
   navigateTo(url:string){
