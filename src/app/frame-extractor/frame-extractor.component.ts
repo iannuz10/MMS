@@ -71,6 +71,8 @@ export class FrameExtractorComponent {
   currentSelector = this.selectorNames[0];
   circleColor = this.selectorColors[0];
 
+  currentProgress: number = 1;
+
   constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
 
   // ONLINE
@@ -326,6 +328,8 @@ export class FrameExtractorComponent {
     });
     // Go to next frame
     this.videoElement.nativeElement.play();
+    this.currentProgress = Math.trunc( (this.videoElement.nativeElement.currentTime / this.videoElement.nativeElement.duration) * 100) + 2;
+    console.log("currentProgress:", this.currentProgress)
   }
 
   skipFrame(){
