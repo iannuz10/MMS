@@ -40,7 +40,12 @@ export class FrameExtractorComponent {
   z_y2!: number;
 
   token: string | null = null;
-  static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/"
+
+  // ONLINE
+  // static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/"
+
+  // OFFLINE
+  static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10.0-jSLmRpeC.mp4"
   videoUrl: string = FrameExtractorComponent.baseVideoUrl;
   videoOffset: string ="";
   // If I'm dragging the mouse on the canvas
@@ -57,46 +62,53 @@ export class FrameExtractorComponent {
   // Activates the video player
   isVideoActive = true;
 
+  // Index of the membrane selector toggles
+  
   maskData: any[] = [];
-
-  myFunction(){}
+  selectorNames: string[] = ['red', 'green', 'blue'];
+  selectorColors: string[] = ['red', 'green', 'blue'];
+  
+  currentSelector = this.selectorNames[0];
+  circleColor = this.selectorColors[0];
 
   constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
 
-  ngOnInit() {
+  // ONLINE
+  // COMMENTA PER FARLO FUNZIONARE OFFLINE
+  // ngOnInit() {
     
-    // You can also initialize the float field in the ngOnInit() method
-    // Check if the user is logged in
-    this.token = localStorage.getItem('authToken');
-    if(this.token == null){
-      console.log("Not Authorized to access the videos");
-      this.rotuer.navigate([""]);
-    }
+  //   // You can also initialize the float field in the ngOnInit() method
+  //   // Check if the user is logged in
+  //   this.token = localStorage.getItem('authToken');
+  //   if(this.token == null){
+  //     console.log("Not Authorized to access the videos");
+  //     this.rotuer.navigate(["Login"]);
+  //   }
     
-    // // Get the first video to review
+  //   // // Get the first video to review
     
-    this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(complete =>
-      {
-        console.log("Got this video URL: ", complete.body);
-        console.log(!complete.body.includes(".mp4"));
-        if (!complete.body.includes(".mp4")){
-          // All videos reviewd
-          this.openSnackBar("All videos have been reviewed!!!");
-        }
-        this.videoOffset = complete.body;
-        this.videoUrl = FrameExtractorComponent.baseVideoUrl + this.videoOffset;
-      }
-      , error => 
-      {
-        console.log("Encountered Error: ", error.status);
-        localStorage.removeItem('authToken');
-        console.log("Redirecting to Authentication Page");
-        this.rotuer.navigate(["Middle"]);
-        // Redirects to Google Login that redirects to MiddleComponent
-        window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
-      }
-    );
-  }
+  //   this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(complete =>
+  //     {
+  //       console.log("Got this video URL: ", complete.body);
+  //       console.log(!complete.body.includes(".mp4"));
+  //       if (!complete.body.includes(".mp4")){
+  //         // All videos reviewd
+  //         this.openSnackBar("All videos have been reviewed!!!");
+  //       }
+  //       this.videoOffset = complete.body;
+  //       this.videoUrl = FrameExtractorComponent.baseVideoUrl + this.videoOffset;
+  //     }
+  //     , error => 
+  //     {
+  //       console.log("Encountered Error: ", error.status);
+  //       localStorage.removeItem('authToken');
+  //       console.log("Redirecting to Authentication Page");
+  //       this.rotuer.navigate(["Middle"]);
+  //       // Redirects to Google Login that redirects to MiddleComponent
+  //       window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
+  //     }
+  //   );
+  // }
 
   onVideoLoaded() {
     // Wait for the video to load (?)
@@ -130,6 +142,23 @@ export class FrameExtractorComponent {
       console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
     });
   }
+
+  onSelectorChange(currentVal: any){
+    this.currentSelector = currentVal
+    console.log("Current Selector:", this.currentSelector);
+
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.circleColor=this.selectorColors[0];
+        break;
+      case this.selectorNames[1]:
+        this.circleColor=this.selectorColors[1];
+        break;
+      case this.selectorNames[2]:
+        this.circleColor=this.selectorColors[2];
+        break;
+    }
+   }
 
   mouseDown(e:any){
     // Click on the video frame and get the coordinates to move or set the circle
@@ -280,6 +309,10 @@ export class FrameExtractorComponent {
     X *= originalCoef;
     Y *= originalCoef;
     R *= originalCoef;    
+
+    X.toFixed(2);
+    Y.toFixed(2);
+    R.toFixed(2);    
 
     console.log("X: ", X, "\nY: ", Y, "\nR: ", R);
 

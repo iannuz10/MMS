@@ -16,6 +16,8 @@ import {MatSliderModule} from '@angular/material/slider';
 import {MatIconModule} from '@angular/material/icon';
 import { CoolSocialLoginButtonsModule } from '@angular-cool/social-login-buttons';
 import { MatToolbarModule } from '@angular/material/toolbar';
+// import { HashLocationStrategy, LocationStrategy } from '@angular/common';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
 
 @NgModule({
   declarations: [
@@ -36,8 +38,10 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatSliderModule,
     MatIconModule,
     CoolSocialLoginButtonsModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatButtonToggleModule
   ],
+  // providers: [{provide: LocationStrategy, useClass: HashLocationStrategy}],
   providers: [],
   bootstrap: [AppComponent]
 })

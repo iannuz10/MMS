@@ -6,10 +6,11 @@ import { MiddleLayerComponent } from './middle-layer/middle-layer.component';
 import { AuthGuard } from './services/auth.guard';
 
 const routes: Routes = [
-  {path: '', component: LoginComponent},
-  {path: 'Middle', component: MiddleLayerComponent},
-  {path: 'MainApp', canActivate:[AuthGuard], component: FrameExtractorComponent},
-  {path: '**', component: LoginComponent},
+  {path: 'Login', component: LoginComponent},
+  {path: '', component: MiddleLayerComponent},
+  {path: 'MainApp',  component: FrameExtractorComponent}, // OFFLINE
+  // {path: 'MainApp', canActivate:[AuthGuard], component: FrameExtractorComponent}, // ONLINE
+  {path: '**', component: MiddleLayerComponent},
 ];
 
 @NgModule({

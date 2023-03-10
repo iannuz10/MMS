@@ -16,41 +16,40 @@ export class MiddleLayerComponent implements OnInit{
   }
 
   ngOnInit(): void {
-    // let url = "4%2F0AWtgzh431cll-I_1LAVH_IwKm9fnyqoWR4oTJCBjN7plc3fDTgwX32RW4BuHXcJLcAx2WA"
-    // console.log(url);
-    // url = decodeURIComponent(url!);
-    // console.log(url);
-    // console.log(this.h.code);
-
     // Get the code from the URL 
+    console.log(window.location.href);
     this.code = this.route.snapshot.queryParamMap.get('code')!;
-    // Decode it
+
     this.code = decodeURIComponent(this.code!);
     console.log('Code parameter value:', this.code);
 
     // Calls POST request and saves the token in the localStorage of the Browser
- 
     if( localStorage.getItem('authToken') == null  || localStorage.getItem('authToken') == 'undefined' ){
       console.log("Asking for a NEW TOKEN");
-      this.h.postToken(this.code!).subscribe(data=>{
-        console.log(data);
-        console.log(data.id_token);
-        localStorage.setItem('authToken', data.id_token);
-        console.log('Redirecting to: MainApp');
-        this.router.navigate(['MainApp']);
-      });
+      this.h.postToken(this.code!).subscribe(
+        {
+          next: (v) => {
+            console.log("Token response Code:", v.statusCode);
+            if(v.statusCode != 500){
+              console.log("Valid token:", v.id_token);
+              localStorage.setItem('authToken', v.id_token);
+              console.log("Redirect to: MainApp");
+              this.router.navigate(['MainApp']);
+            }
+            else{
+              console.log("Invalid token:", v.id_token);
+              console.log("Redirect to: Login");
+              this.router.navigate(['Login']);
+            }
+          },
+        error: (e) => console.error(e),
+        complete: () => console.info('complete')}
+      );
+      return;
     }
     console.log('Skipping NEW TOKEN');
     console.log('Redirecting to: MainApp');
     this.router.navigate(['MainApp']);
   }
 
-  post(): void{
-    this.h.postToken(this.code!).subscribe(data=>{
-        console.log(data);
-        console.log(data.id_token);
-        localStorage.setItem('authToken', data.id_token);
-    });
-    console.log("fire");
-  }
 }
