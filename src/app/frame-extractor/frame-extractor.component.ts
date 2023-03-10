@@ -88,6 +88,7 @@ export class FrameExtractorComponent {
   // Current frame number
   currentProgress: number = 1;
 
+  // Payload to send to the server
   Payload: any[] = [];
 
   constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
@@ -171,6 +172,7 @@ export class FrameExtractorComponent {
     });
   }
 
+  // Change style of the selected circle and the current selector
   onSelectorChange(currentVal: any){
     this.currentSelector = currentVal
     console.log("Current Selector:", this.currentSelector);
@@ -203,6 +205,7 @@ export class FrameExtractorComponent {
     }
    }
 
+  // Change only the selected circle's radius
    onCircleRadiusChange(currentVal: any){
     switch(this.currentSelector){
       case this.selectorNames[0]:
@@ -220,6 +223,7 @@ export class FrameExtractorComponent {
     }
   }
 
+  // Change only the selected circle's center
   onCircleCenterChange(currentValX: any, currentValY: any){
     switch(this.currentSelector){
       case this.selectorNames[0]:
@@ -243,7 +247,6 @@ export class FrameExtractorComponent {
     }
   }
 
-
   mouseDown(e:any){
     // Click on the video frame and get the coordinates to move or set the circle
     if(!this.isZooming){
@@ -262,7 +265,7 @@ export class FrameExtractorComponent {
         // this.center_y = e.offsetY;
         console.log("Setting circle center to click coordinates");
       }
-    } else if (this.isZooming && !this.isZoomed){
+    } else if (this.isZooming && !this.isZoomed && e.srcElement.tagName == "VIDEO"){
       // Zoom
       // Start dragging the rectangle to zoom in
       this.isDraggingRect = true;
@@ -282,7 +285,7 @@ export class FrameExtractorComponent {
 
     // Zoom
     // Stop dragging the rectangle to zoom in
-    if(this.isZooming && !this.isZoomed && this.z_x1){
+    if(this.isZooming && !this.isZoomed && e.srcElement.tagName == "VIDEO"){
       this.z_x2 = e.offsetX;
       this.z_y2 = e.offsetY;
       this.zoomIn();
@@ -291,6 +294,10 @@ export class FrameExtractorComponent {
       this.isDraggingRect = false;
       this.isZooming = false; 
       this.isZoomed = true;
+    }else if(this.isZooming && !this.isZoomed && e.srcElement.tagName != "VIDEO"){
+      // Don't do enything if mouse is released outside the video frame
+      this.isDraggingRect = false;
+      this.isZooming = false;
     }
   }
 
@@ -378,7 +385,6 @@ export class FrameExtractorComponent {
         (this.videoElement.nativeElement.clientWidth/2)-(scaledWidth*k/2), 0, scaledWidth*k, this.canva.nativeElement.height
       );
     }
-    // Scale the coordinates of the circle and adjust the position of the circle to the zoomed area
   }
 
   nextFrame(){
@@ -388,29 +394,30 @@ export class FrameExtractorComponent {
     // Scale coefficient to original video size
     let originalCoef = this.videoElement.nativeElement.videoWidth/this.video_width;
 
+    // Sectors data to send to the server
     let maskDataRed: any[] = [];
     let maskDataGreen: any[] = [];
     let maskDataBlue: any[] = [];
 
+    // Current frame data
     let redX = this.red_x;
     let redY = this.red_y;
     let redR = this.red_r;
-
     let greenX = this.green_x;
     let greenY = this.green_y;
     let greenR = this.green_r;
-
     let blueX = this.blue_x;
     let blueY = this.blue_y;
     let blueR = this.blue_r;
     
+    // Scale the coordinates to the client video size if the video is zoomed
     if(this.isZoomed){
       [redX, redY, redR] = this.scaleBack(this.red_x,this.red_y,this.red_r);
       [greenX, greenY, greenR] = this.scaleBack(this.green_x,this.green_y,this.green_r);
       [blueX, blueY, blueR] = this.scaleBack(this.blue_x,this.blue_y,this.blue_r);
     }
     
-
+    // Scale the coordinates to the original video size
     redX *= originalCoef;
     redY *= originalCoef;
     redR *= originalCoef;    
@@ -421,6 +428,7 @@ export class FrameExtractorComponent {
     blueY *= originalCoef;
     blueR *= originalCoef;
 
+    // Round the coordinates to 2 decimal places
     redX.toFixed(2);
     redY.toFixed(2);
     redR.toFixed(2);    
@@ -431,25 +439,24 @@ export class FrameExtractorComponent {
     blueY.toFixed(2);
     blueR.toFixed(2);
 
+    // Save the coordinates
     maskDataRed.push({
       x: redX,
       y: redY,
       r: redR
     });
-
     maskDataGreen.push({
       x: greenX,
       y: greenY,
       r: greenR
     });
-    
     maskDataBlue.push({
       x: blueX,
       y: blueY,
       r: blueR
     });
 
-    // Save selection data
+    // Create payload for current frame
     this.Payload.push({
       r: maskDataRed, 
       g: maskDataGreen,
@@ -486,6 +493,7 @@ export class FrameExtractorComponent {
   }
 
   // Resize canvas related stuff based on the new window size
+  // TODO: Fix the bug when the window is resized while zooming
   onWindowResize(e:any){
     console.log("Window resized")
     let h = this.videoElement.nativeElement.clientHeight;
@@ -513,6 +521,8 @@ export class FrameExtractorComponent {
   restoreView(){
     this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
     this.isZoomed = false;    
+
+    // Place circles in the correct position
     this.adaptCirclesZoomOut();
   }
 
@@ -530,7 +540,8 @@ export class FrameExtractorComponent {
     if(this.isZoomed){ 
       this.zoomIn();
     }
-    // Set a white background to hide the video when zooming (WIP)
+
+    // Set a white background to hide the video when zooming
     let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
     contextWhiteCanva.beginPath();
     contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
@@ -552,10 +563,12 @@ export class FrameExtractorComponent {
   // console.log("fire");
   }
 
+  // Open a snackbar with a message
   openSnackBar(toastMessage: string) {
     this.snackBar.open(toastMessage, "Dismiss", {duration:20000});
   }
 
+  // Place the circles in the correct position after zooming in
   adaptCirclesZoomIn(){
     let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
@@ -601,6 +614,7 @@ export class FrameExtractorComponent {
     }
   }
 
+  // Place the circles in the correct position after zooming out
   adaptCirclesZoomOut(){
     let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
@@ -646,13 +660,13 @@ export class FrameExtractorComponent {
     }
   }
 
+  // Calculate the actual position on the client screen of the circle passed as parameter
   scaleBack(X : number, Y : number, R : number){
     // let scale_fac = this.videoElement.nativeElement.videoWidth/this.canva.nativeElement.width; 
 
     let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
     
-
     let Cy = this.videoElement.nativeElement.clientHeight;
     let Cx = this.videoElement.nativeElement.clientWidth;
 
@@ -695,15 +709,15 @@ export class FrameExtractorComponent {
       console.log("Circle radius: ", circleRadius);
     }
 
-    // Scale the circle center and radius to the original video size
-
     return [circleCenterX, circleCenterY, circleRadius];
   }
 
+  // Change current selected circle's radius
   onSliderRadiusChange(){
     this.onCircleRadiusChange(this.radius);
   }
 
+  // Change current selected circle's X position
   onSliderXChange(){
     switch(this.currentSelector){
       case this.selectorNames[0]:
@@ -718,6 +732,7 @@ export class FrameExtractorComponent {
     }
   }
 
+  // Change current selected circle's Y position
   onSliderYChange(){
     switch(this.currentSelector){
       case this.selectorNames[0]:
