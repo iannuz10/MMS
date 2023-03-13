@@ -72,6 +72,9 @@ export class FrameExtractorComponent {
   // If the current Image is Zoomed
   isZoomed: boolean = false;
 
+  // Video is loading (actually extracting frames)
+  isVideoLoading: boolean = true;
+
   // Activates the video player
   isVideoActive = true;
 
@@ -90,6 +93,9 @@ export class FrameExtractorComponent {
 
   // Payload to send to the server
   Payload: any[] = [];
+
+  frames: any[] = [];
+  currFrameNumber: number = 0;
 
   constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
 
@@ -154,21 +160,27 @@ export class FrameExtractorComponent {
 
       console.log(h,w);
 
-      // Set a white background to hide the video when zooming (WIP)
-      let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
-      contextWhiteCanva.beginPath();
-      contextWhiteCanva.rect(0, 0, w, h);
-      contextWhiteCanva.fillStyle = "white";
-      contextWhiteCanva.fill();
-
+      console.log("Extracting frames")
       // Necessary to get the firs frame of the video
-      this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
+      this.videoElement.nativeElement.muted = true;
+      this.videoElement.nativeElement.playbackRate = 0.1;
+      
+      this.videoElement.nativeElement.requestVideoFrameCallback(this.extractFrames);
+      this.videoElement.nativeElement.play();
 
       console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
       console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
 
       console.log("Video width: ", this.videoElement.nativeElement.videoWidth);
       console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
+
+      // // Set a white background to hide the video when zooming (WIP)
+      // let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+      // contextWhiteCanva.beginPath();
+      // contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
+      // contextWhiteCanva.fillStyle = "white";
+      // contextWhiteCanva.fill();
+      
     });
   }
 
@@ -463,7 +475,11 @@ export class FrameExtractorComponent {
       b: maskDataBlue
     });
     // Go to next frame
-    this.videoElement.nativeElement.play();
+    console.log("Time before play: ", this.videoElement.nativeElement.currentTime);
+    let nextFrameTime = this.frames[this.currFrameNumber++];
+    this.videoElement.nativeElement.currentTime = nextFrameTime;
+    console.log("Time after play: ", this.videoElement.nativeElement.currentTime);
+    this.drawFrame();
     this.currentProgress = Math.trunc( (this.videoElement.nativeElement.currentTime / this.videoElement.nativeElement.duration) * 100) + 2;
     console.log("currentProgress:", this.currentProgress);
   }
@@ -477,7 +493,10 @@ export class FrameExtractorComponent {
       b: [-1]
     });
     // Go to next frame
-    this.videoElement.nativeElement.play();
+    let nextFrameTime = this.frames[this.currFrameNumber++];
+    this.videoElement.nativeElement.currentTime = nextFrameTime;
+    this.drawFrame();
+    this.currentProgress = Math.trunc( (this.videoElement.nativeElement.currentTime / this.videoElement.nativeElement.duration) * 100) + 2;
   }
 
   // Change the radius of the circle based on the scroll
@@ -526,11 +545,64 @@ export class FrameExtractorComponent {
     this.adaptCirclesZoomOut();
   }
 
+  // Take all frames context from the video and save them in an array
+  extractFrames = (now:any, metadata:any) => {
+    if(this.isVideoLoading){
+
+      console.log("Inside extractFrames");
+      this.videoElement.nativeElement.requestVideoFrameCallback(this.extractFrames);
+
+      // this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
+        
+      // Get the current frame context
+      let currTime = this.videoElement.nativeElement.currentTime;
+      console.log("Current time: ", currTime);
+      
+      // Set a white background to hide the video when zooming (WIP)
+      let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+      contextWhiteCanva.beginPath();
+      contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
+      contextWhiteCanva.fillStyle = "white";
+      contextWhiteCanva.fill();
+      
+      // contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+      //   ,0,0, this.video_width,this.video_height);
+      
+      // Insert in frames array the current HTMLCanvasElement
+      this.frames.push(currTime);
+      
+      // // Print type of frame
+      // console.log("Frame type: ", typeof(this.frames[this.currFrameNumber]));
+      
+      console.log("Frames extracted: ", this.frames.length);
+    }
+  }
+  
+  drawFrame() {
+    let contextCanva = this.canva.nativeElement.getContext('2d');
+    
+    contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+      ,0,0, this.video_width,this.video_height);
+    
+    // If previous frame was zoomed, zoom also the current one
+    if(this.isZoomed){ 
+      this.zoomIn();
+    }
+
+    // Set a white background to hide the video when zooming
+    let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+    contextWhiteCanva.beginPath();
+    contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
+    contextWhiteCanva.fillStyle = "white";
+    contextWhiteCanva.fill();
+  }
+
   // Frame by frame callback
   doSomethingWithFrame = (now:any, metadata:any) =>{
     console.log(metadata.presentedFrames);
     this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
     this.videoElement.nativeElement.pause();
+    console.log("Time after pause:", this.videoElement.nativeElement.currentTime);
     let contextCanva = this.canva.nativeElement.getContext('2d');
     
     contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
@@ -559,8 +631,12 @@ export class FrameExtractorComponent {
     // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
     //   console.log(data);
     // });
-    this.isVideoActive = false;
-  // console.log("fire");
+    this.isVideoActive = true; // CHANGE THIS TO FALSE
+    this.isVideoLoading = false;
+    this.videoElement.nativeElement.currentTime = 0;
+    let contextCanva = this.canva.nativeElement.getContext('2d');
+    contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
+      ,0,0, this.video_width,this.video_height);
   }
 
   // Open a snackbar with a message

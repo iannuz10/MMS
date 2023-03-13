@@ -1,11 +1,12 @@
 <div class="container">
   <div class="video-container" *ngIf="isVideoActive">
+    <mat-spinner></mat-spinner>
     <video #videoElement (ended)="videoEnded($event)" (loadeddata)="onVideoLoaded()" 
             (wheel)="onMouseWheelScroll($event)" (mousedown)="mouseDown($event)" 
             (window:mouseup)="mouseUp($event)" (mousemove)="mouseMove($event)" 
-            (window:resize)="onWindowResize($event)" [src]="videoUrl">
+            (window:resize)="onWindowResize($event)" [src]="videoUrl" autoplay muted>
     </video>
-    <svg [attr.height]="video_height" [attr.width]="video_width" >
+    <svg *ngIf="!isVideoLoading" [attr.height]="video_height" [attr.width]="video_width" >
       <circle [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>
       <circle [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
       <circle [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
