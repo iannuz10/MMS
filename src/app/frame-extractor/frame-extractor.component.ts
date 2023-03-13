@@ -91,6 +91,8 @@ export class FrameExtractorComponent {
   // Payload to send to the server
   Payload: any[] = [];
 
+  currentTime: number = 0;
+
   constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
 
   // ONLINE
@@ -463,6 +465,8 @@ export class FrameExtractorComponent {
       b: maskDataBlue
     });
     // Go to next frame
+    console.log("Time at play: ", this.videoElement.nativeElement.currentTime);
+    this.currentTime = this.videoElement.nativeElement.currentTime;
     this.videoElement.nativeElement.play();
     this.currentProgress = Math.trunc( (this.videoElement.nativeElement.currentTime / this.videoElement.nativeElement.duration) * 100) + 2;
     console.log("currentProgress:", this.currentProgress);
@@ -529,8 +533,19 @@ export class FrameExtractorComponent {
   // Frame by frame callback
   doSomethingWithFrame = (now:any, metadata:any) =>{
     console.log(metadata.presentedFrames);
+
+    
+    
     this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
     this.videoElement.nativeElement.pause();
+    let timeElapsed = this.videoElement.nativeElement.currentTime - this.currentTime;
+    console.log("Time elapsed: ", timeElapsed)
+    if(timeElapsed < 0.05 && this.currentTime > 0){
+      console.log("Something went wrong, skipping frame")
+      this.videoElement.nativeElement.play();
+    }
+    console.log("Time at pause: ", this.videoElement.nativeElement.currentTime);
+
     let contextCanva = this.canva.nativeElement.getContext('2d');
     
     contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
