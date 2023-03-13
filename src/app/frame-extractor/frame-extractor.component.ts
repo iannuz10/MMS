@@ -145,6 +145,13 @@ export class FrameExtractorComponent {
       this.video_width = w;
       this.center_y = this.video_height/2;
       this.center_x = this.video_width/2;
+      this.radius = Math.min(this.video_height, this.video_width)/10;
+      
+      this.red_r = this.radius;
+      this.green_r = this.radius+20;
+      this.blue_r = this.radius+40;
+
+      console.log("Center: ",this.center_x, this.center_y)
 
       // Set the initial position of the circles
       this.red_x = this.center_x;
@@ -538,9 +545,13 @@ export class FrameExtractorComponent {
     
     this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
     this.videoElement.nativeElement.pause();
-    let timeElapsed = this.videoElement.nativeElement.currentTime - this.currentTime;
+    let timeElapsed: number;
+    if(this.currentTime == 0)
+      timeElapsed = this.videoElement.nativeElement.currentTime;
+    else
+      timeElapsed = this.videoElement.nativeElement.currentTime - this.currentTime;
     console.log("Time elapsed: ", timeElapsed)
-    if(timeElapsed < 0.05 && this.currentTime > 0){
+    if(timeElapsed < 0.05){
       console.log("Something went wrong, skipping frame")
       this.videoElement.nativeElement.play();
     }
@@ -729,7 +740,17 @@ export class FrameExtractorComponent {
 
   // Change current selected circle's radius
   onSliderRadiusChange(){
-    this.onCircleRadiusChange(this.radius);
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_r = this.radius;
+        break;
+      case this.selectorNames[1]:
+        this.green_r = this.radius;
+        break;
+      case this.selectorNames[2]:
+        this.blue_r = this.radius;
+        break;
+    }
   }
 
   // Change current selected circle's X position
