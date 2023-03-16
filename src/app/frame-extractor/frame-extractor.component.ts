@@ -325,81 +325,107 @@ export class FrameExtractorComponent {
     return true;
   }
 
-  // Change style of the selected circle and the current selector
-  onSelectorChange(currentVal: any){
-    this.currentSelector = currentVal
-    console.log("Current Selector:", this.currentSelector);
+  nextFrame(){
+    // console.log("Frames data: ", this.maskData);
+    this.isZooming = false;
 
-    switch(this.currentSelector){
-      case this.selectorNames[0]:
-        this.circleColor=this.selectorColors[0];
-        this.center_x = this.red_x;
-        this.center_y = this.red_y;
-        this.radius = this.red_r;
-        this.circleOpacity = [0.1, 0, 0];
-        this.strokeOpacity = [1, 0.2, 0.2];
-        break;
-      case this.selectorNames[1]:
-        this.circleColor=this.selectorColors[1];
-        this.center_x = this.green_x;
-        this.center_y = this.green_y;
-        this.radius = this.green_r;
-        this.circleOpacity = [0, 0.1, 0];
-        this.strokeOpacity = [0.2, 1, 0.2];
-        break;
-      case this.selectorNames[2]:
-        this.circleColor=this.selectorColors[2];
-        this.center_x = this.blue_x;
-        this.center_y = this.blue_y;
-        this.radius = this.blue_r;
-        this.circleOpacity = [0, 0, 0.1];
-        this.strokeOpacity = [0.2, 0.2, 1];
-        break;
-    }
-   }
+    // Scale coefficient to original video size
+    let originalCoef = this.newImg.nativeElement.width/this.video_width;
 
-  // Change only the selected circle's radius
-   onCircleRadiusChange(currentVal: any){
-    switch(this.currentSelector){
-      case this.selectorNames[0]:
-        this.red_r = currentVal;
-        this.radius = this.red_r;
-        break;
-      case this.selectorNames[1]:
-        this.green_r = currentVal;
-        this.radius = this.green_r;
-        break;
-      case this.selectorNames[2]:
-        this.blue_r = currentVal;
-        this.radius = this.blue_r;
-        break;
+    // Sectors data to send to the server
+    let maskDataRed: any[] = [];
+    let maskDataGreen: any[] = [];
+    let maskDataBlue: any[] = [];
+
+    // Current frame data
+    let redX = this.red_x;
+    let redY = this.red_y;
+    let redR = this.red_r;
+    let greenX = this.green_x;
+    let greenY = this.green_y;
+    let greenR = this.green_r;
+    let blueX = this.blue_x;
+    let blueY = this.blue_y;
+    let blueR = this.blue_r;
+    
+    // Scale the coordinates to the client video size if the video is zoomed
+    if(this.isZoomed){
+      [redX, redY, redR] = this.scaleBack(this.red_x,this.red_y,this.red_r);
+      [greenX, greenY, greenR] = this.scaleBack(this.green_x,this.green_y,this.green_r);
+      [blueX, blueY, blueR] = this.scaleBack(this.blue_x,this.blue_y,this.blue_r);
     }
+    
+    // Scale the coordinates to the original video size
+    redX *= originalCoef;
+    redY *= originalCoef;
+    redR *= originalCoef;    
+    greenX *= originalCoef;
+    greenY *= originalCoef;
+    greenR *= originalCoef;
+    blueX *= originalCoef;
+    blueY *= originalCoef;
+    blueR *= originalCoef;
+
+    // Round the coordinates to 2 decimal places
+    redX.toFixed(2);
+    redY.toFixed(2);
+    redR.toFixed(2);    
+    greenX.toFixed(2);
+    greenY.toFixed(2);
+    greenR.toFixed(2);
+    blueX.toFixed(2);
+    blueY.toFixed(2);
+    blueR.toFixed(2);
+
+    // Save the coordinates
+    maskDataRed.push({
+      x: redX,
+      y: redY,
+      r: redR
+    });
+    maskDataGreen.push({
+      x: greenX,
+      y: greenY,
+      r: greenR
+    });
+    maskDataBlue.push({
+      x: blueX,
+      y: blueY,
+      r: blueR
+    });
+
+    // Create payload for current frame
+    this.Payload.push({
+      r: maskDataRed, 
+      g: maskDataGreen,
+      b: maskDataBlue
+    });
+    // Go to next frame
+    console.log("Time at play: ", this.newImg.nativeElement.currentTime);
+    // this.currentTime = this.newImg.nativeElement.currentTime;
+    // this.newImg.nativeElement.play();
+    this.next(Mode.frame_by_frame);
+
+    this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
+    console.log("currentProgress:", this.currentProgress);
   }
 
-  // Change only the selected circle's center
-  onCircleCenterChange(currentValX: any, currentValY: any){
-    switch(this.currentSelector){
-      case this.selectorNames[0]:
-        this.red_x = currentValX;
-        this.red_y = currentValY;
-        this.center_x = this.red_x;
-        this.center_y = this.red_y;
-        break;
-      case this.selectorNames[1]:
-        this.green_x = currentValX;
-        this.green_y = currentValY;
-        this.center_x = this.green_x;
-        this.center_y = this.green_y;
-        break;
-      case this.selectorNames[2]:
-        this.blue_x = currentValX;
-        this.blue_y = currentValY;
-        this.center_x = this.blue_x;
-        this.center_y = this.blue_y;
-        break;
-    }
+  skipFrame(){
+    this.isZooming = false;
+    // Frame skipped -> no selection
+    this.Payload.push({
+      r: [],
+      g: [],
+      b: []
+    });
+    // Go to next frame
+    this.next(Mode.frame_by_frame);
+    this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
+    // this.newImg.nativeElement.play();
   }
 
+
+  // -------------------------------------------- Event handlers --------------------------------------------
   mouseDown(e:any){
     // Click on the video frame and get the coordinates to move or set the circle
     if(!this.isZooming){
@@ -490,6 +516,128 @@ export class FrameExtractorComponent {
     }
   }
 
+  // Change the radius of the circle based on the scroll
+  onMouseWheelScroll(e:any){
+    if (e.deltaY > 0){
+      this.onCircleRadiusChange(this.radius - 1);
+      // this.radius -= 1;
+    }
+    else{
+      this.onCircleRadiusChange(this.radius + 1);
+      // this.radius += 1;
+    }
+  }
+
+  // Resize canvas related stuff based on the new window size
+  onWindowResize(e:any){
+    console.log("Window resized")
+    let h = this.newImg.nativeElement.clientHeight;
+    let w = this.newImg.nativeElement.clientWidth;
+    this.red_x = this.red_x * w / this.video_width;
+    this.red_y = this.red_y * h / this.video_height;
+    this.red_r = this.red_r * w / this.video_width;
+    this.green_x = this.green_x * w / this.video_width;
+    this.green_y = this.green_y * h / this.video_height;
+    this.green_r = this.green_r * w / this.video_width;
+    this.blue_x = this.blue_x * w / this.video_width;
+    this.blue_y = this.blue_y * h / this.video_height;
+    this.blue_r = this.blue_r * w / this.video_width;
+    this.video_height = h;
+    this.video_width = w;
+    if(this.isZoomed){
+      this.adaptCirclesZoomOut();
+      this.isZoomed = false;
+    }
+  }
+
+  // Change style of the selected circle and the current selector
+  onSelectorChange(currentVal: any){
+    this.currentSelector = currentVal
+    console.log("Current Selector:", this.currentSelector);
+
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.circleColor=this.selectorColors[0];
+        this.center_x = this.red_x;
+        this.center_y = this.red_y;
+        this.radius = this.red_r;
+        this.circleOpacity = [0.1, 0, 0];
+        this.strokeOpacity = [1, 0.2, 0.2];
+        break;
+      case this.selectorNames[1]:
+        this.circleColor=this.selectorColors[1];
+        this.center_x = this.green_x;
+        this.center_y = this.green_y;
+        this.radius = this.green_r;
+        this.circleOpacity = [0, 0.1, 0];
+        this.strokeOpacity = [0.2, 1, 0.2];
+        break;
+      case this.selectorNames[2]:
+        this.circleColor=this.selectorColors[2];
+        this.center_x = this.blue_x;
+        this.center_y = this.blue_y;
+        this.radius = this.blue_r;
+        this.circleOpacity = [0, 0, 0.1];
+        this.strokeOpacity = [0.2, 0.2, 1];
+        break;
+    }
+   }
+
+  // Change only the selected circle's radius
+   onCircleRadiusChange(currentVal: any){
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_r = currentVal;
+        this.radius = this.red_r;
+        break;
+      case this.selectorNames[1]:
+        this.green_r = currentVal;
+        this.radius = this.green_r;
+        break;
+      case this.selectorNames[2]:
+        this.blue_r = currentVal;
+        this.radius = this.blue_r;
+        break;
+    }
+  }
+
+  // Change only the selected circle's center
+  onCircleCenterChange(currentValX: any, currentValY: any){
+    switch(this.currentSelector){
+      case this.selectorNames[0]:
+        this.red_x = currentValX;
+        this.red_y = currentValY;
+        this.center_x = this.red_x;
+        this.center_y = this.red_y;
+        break;
+      case this.selectorNames[1]:
+        this.green_x = currentValX;
+        this.green_y = currentValY;
+        this.center_x = this.green_x;
+        this.center_y = this.green_y;
+        break;
+      case this.selectorNames[2]:
+        this.blue_x = currentValX;
+        this.blue_y = currentValY;
+        this.center_x = this.blue_x;
+        this.center_y = this.blue_y;
+        break;
+    }
+  }
+
+  // Open a snackbar with a message
+  openSnackBar(toastMessage: string) {
+    this.snackBar.open(toastMessage, "Dismiss", {duration:20000});
+  }
+
+
+  // ----------------------------------- ZOOMING AND SCALING-----------------------------------
+  // Enable zooming
+  zoom(){
+      this.isZooming = true;
+  }
+
+  // Perform the zooming
   zoomIn(){
     this.canva.nativeElement.getContext('2d').clearRect(0, 0, (this.canva.nativeElement.width), (this.canva.nativeElement.height));
 
@@ -545,210 +693,14 @@ export class FrameExtractorComponent {
     contextWhiteCanva.fill();
   }
 
-  nextFrame(){
-    // console.log("Frames data: ", this.maskData);
-    this.isZooming = false;
-
-    // Scale coefficient to original video size
-    let originalCoef = this.newImg.nativeElement.width/this.video_width;
-
-    // Sectors data to send to the server
-    let maskDataRed: any[] = [];
-    let maskDataGreen: any[] = [];
-    let maskDataBlue: any[] = [];
-
-    // Current frame data
-    let redX = this.red_x;
-    let redY = this.red_y;
-    let redR = this.red_r;
-    let greenX = this.green_x;
-    let greenY = this.green_y;
-    let greenR = this.green_r;
-    let blueX = this.blue_x;
-    let blueY = this.blue_y;
-    let blueR = this.blue_r;
-    
-    // Scale the coordinates to the client video size if the video is zoomed
-    if(this.isZoomed){
-      [redX, redY, redR] = this.scaleBack(this.red_x,this.red_y,this.red_r);
-      [greenX, greenY, greenR] = this.scaleBack(this.green_x,this.green_y,this.green_r);
-      [blueX, blueY, blueR] = this.scaleBack(this.blue_x,this.blue_y,this.blue_r);
-    }
-    
-    // Scale the coordinates to the original video size
-    redX *= originalCoef;
-    redY *= originalCoef;
-    redR *= originalCoef;    
-    greenX *= originalCoef;
-    greenY *= originalCoef;
-    greenR *= originalCoef;
-    blueX *= originalCoef;
-    blueY *= originalCoef;
-    blueR *= originalCoef;
-
-    // Round the coordinates to 2 decimal places
-    redX.toFixed(2);
-    redY.toFixed(2);
-    redR.toFixed(2);    
-    greenX.toFixed(2);
-    greenY.toFixed(2);
-    greenR.toFixed(2);
-    blueX.toFixed(2);
-    blueY.toFixed(2);
-    blueR.toFixed(2);
-
-    // Save the coordinates
-    maskDataRed.push({
-      x: redX,
-      y: redY,
-      r: redR
-    });
-    maskDataGreen.push({
-      x: greenX,
-      y: greenY,
-      r: greenR
-    });
-    maskDataBlue.push({
-      x: blueX,
-      y: blueY,
-      r: blueR
-    });
-
-    // Create payload for current frame
-    this.Payload.push({
-      r: maskDataRed, 
-      g: maskDataGreen,
-      b: maskDataBlue
-    });
-    // Go to next frame
-    console.log("Time at play: ", this.newImg.nativeElement.currentTime);
-    // this.currentTime = this.newImg.nativeElement.currentTime;
-    // this.newImg.nativeElement.play();
-    this.next(Mode.frame_by_frame);
-
-    this.currentProgress = this.gif_index / this.fr_list.length * 100;
-    console.log("currentProgress:", this.currentProgress);
-  }
-
-  skipFrame(){
-    this.isZooming = false;
-    // Frame skipped -> no selection
-    this.Payload.push({
-      r: [],
-      g: [],
-      b: []
-    });
-    // Go to next frame
-    this.next(Mode.frame_by_frame);
-    this.currentProgress = this.gif_index / this.fr_list.length * 100;
-    // this.newImg.nativeElement.play();
-  }
-
-  // Change the radius of the circle based on the scroll
-  onMouseWheelScroll(e:any){
-    if (e.deltaY > 0){
-      this.onCircleRadiusChange(this.radius - 1);
-      // this.radius -= 1;
-    }
-    else{
-      this.onCircleRadiusChange(this.radius + 1);
-      // this.radius += 1;
-    }
-  }
-
-  // Resize canvas related stuff based on the new window size
-  onWindowResize(e:any){
-    console.log("Window resized")
-    let h = this.newImg.nativeElement.clientHeight;
-    let w = this.newImg.nativeElement.clientWidth;
-    this.red_x = this.red_x * w / this.video_width;
-    this.red_y = this.red_y * h / this.video_height;
-    this.red_r = this.red_r * w / this.video_width;
-    this.green_x = this.green_x * w / this.video_width;
-    this.green_y = this.green_y * h / this.video_height;
-    this.green_r = this.green_r * w / this.video_width;
-    this.blue_x = this.blue_x * w / this.video_width;
-    this.blue_y = this.blue_y * h / this.video_height;
-    this.blue_r = this.blue_r * w / this.video_width;
-    this.video_height = h;
-    this.video_width = w;
-    if(this.isZoomed){
-      this.adaptCirclesZoomOut();
-      this.isZoomed = false;
-    }
-  }
-
-  // Enable zooming
-  zoom(){
-      this.isZooming = true;
-  }
-
   // Go back to full video view
   restoreView(){
-    this.canva.nativeElement.getContext('2d').drawImage(this.newImg.nativeElement,0,0, this.newImg.nativeElement.width, this.newImg.nativeElement.height, 0,0, this.video_width,this.video_height);
+    this.canva.nativeElement.getContext('2d').clearRect(0, 0, (this.canva.nativeElement.width), (this.canva.nativeElement.height));
+    this.whiteCanva.nativeElement.getContext('2d').clearRect(0, 0, (this.whiteCanva.nativeElement.width), (this.whiteCanva.nativeElement.height));
     this.isZoomed = false;    
 
     // Place circles in the correct position
     this.adaptCirclesZoomOut();
-  }
-
-  // // TO DELETE (UNUSED)
-  // // Frame by frame callback 
-  // doSomethingWithFrame = (now:any, metadata:any) =>{
-  //   console.log(metadata.presentedFrames);
-
-    
-    
-  //   this.newImg.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
-  //   this.newImg.nativeElement.pause();
-  //   let timeElapsed: number;
-  //   if(this.currentTime == 0)
-  //     timeElapsed = this.newImg.nativeElement.currentTime;
-  //   else
-  //     timeElapsed = this.newImg.nativeElement.currentTime - this.currentTime;
-  //   console.log("Time elapsed: ", timeElapsed)
-  //   if(timeElapsed < 0.05){
-  //     console.log("Something went wrong, skipping frame")
-  //     this.newImg.nativeElement.play();
-  //   }
-  //   console.log("Time at pause: ", this.newImg.nativeElement.currentTime);
-
-  //   let contextCanva = this.canva.nativeElement.getContext('2d');
-    
-  //   contextCanva.drawImage(this.newImg.nativeElement, 0, 0, this.newImg.nativeElement.width, this.newImg.nativeElement.height
-  //     ,0,0, this.video_width,this.video_height);
-    
-  //   // If previous frame was zoomed, zoom also the current one
-  //   if(this.isZoomed){ 
-  //     this.zoomIn();
-  //   }
-
-  //   // Set a white background to hide the video when zooming
-  //   let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
-  //   contextWhiteCanva.beginPath();
-  //   contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
-  //   contextWhiteCanva.fillStyle = "white";
-  //   contextWhiteCanva.fill();
-  // }
-
-  // // TO DELETE (UNUSED)
-  // // Video ended callback
-  // videoEnded(e:any){
-  //   console.log("Video Ended");
-  //   this.openSnackBar("Video Finished!!!");
-  //   // Save the mask data API call
-  //   // ONLINE
-  //   // COMMENTA PER FARLO FUNZIONARE OFFLINE
-  //   // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
-  //   //   console.log(data);
-  //   // });
-  //   this.isVideoActive = false;
-  // // console.log("fire");
-  // }
-
-  // Open a snackbar with a message
-  openSnackBar(toastMessage: string) {
-    this.snackBar.open(toastMessage, "Dismiss", {duration:20000});
   }
 
   // Place the circles in the correct position after zooming in
@@ -907,6 +859,8 @@ export class FrameExtractorComponent {
     return [circleCenterX, circleCenterY, circleRadius];
   }
 
+
+  // -------------------------------------- SLIDERS ----------------------------------------
   // Change current selected circle's radius
   onSliderRadiusChange(){
     switch(this.currentSelector){

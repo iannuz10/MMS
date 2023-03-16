@@ -28,8 +28,8 @@
 
   <!---------------------------------Assessment Video player------------------------------------>
   <div *ngIf="!task">
-    <button (click)="prev(_mode.frame_by_frame)" style="z-index: 1">prev</button>
-    <button  (click)="next(_mode.frame_by_frame)" style="z-index: 1">next</button>
+    <button (click)="prev(_mode.frame_by_frame)" style="z-index: 1">Previous</button>
+    <button  (click)="next(_mode.frame_by_frame)" style="z-index: 1">Next</button>
     <mat-slider min=50 max = 120>
         <input matSliderThumb [(ngModel)]="delay_multiplier">
     </mat-slider>
@@ -46,7 +46,7 @@
     <div class="button-container">
       <button mat-raised-button matTooltip="Save current selection and proceed to next frame" color="primary" (click)="nextFrame()">Next Frame</button>
       <button mat-raised-button matTooltip="If frame is blurred or there are errors displayed press to skip" color="warn" (click)="skipFrame()">Skip Frame</button>
-      <h3>Single selection: {{selectors.value}}</h3>
+      <h3>Selected: {{selectors.value}}</h3>
       <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
         <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
         <mat-button-toggle [value]="selectorNames[1]">{{selectorNames[1]}}</mat-button-toggle>
