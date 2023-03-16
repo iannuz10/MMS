@@ -5,19 +5,17 @@ video{
     top: 0;
     left: 0;
     z-index: 1;
+    pointer-events: none;
 }
+
 svg{
   max-width: 100%;
   height: auto;
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 4;
+  z-index: 5;
   pointer-events: none;
-}
-
-#whiteCanva{
-  z-index: 4 !important;
 }
 
 canvas{
@@ -26,7 +24,19 @@ canvas{
   position: absolute;
   top: 0;
   left: 0;
+}
+
+#newImg{
+  z-index: 1;
+}
+
+#whiteCanva{
   z-index: 3;
+  pointer-events: none;
+}
+
+#videoCanva{
+  z-index: 4;
   pointer-events: none;
 }
 

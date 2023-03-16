@@ -1,4 +1,19 @@
 <mat-toolbar color="primary">
+  <button *ngIf="isLogged" mat-icon-button [matMenuTriggerFor]="menu" class="example-icon" aria-label="Example icon-button with menu icon">
+    <mat-icon>menu</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item routerLink="/MainApp">
+      <span>Membrane Selection</span>
+    </button>
+    <button mat-menu-item routerLink="/AssessmentApp">
+      <span>Oocyte Assessment</span>
+    </button>
+    <button mat-menu-item (click)="logOut()">
+      <mat-icon>power_settings_new</mat-icon>
+      <span>Logout</span>
+    </button>
+  </mat-menu>
     <span>Membrane Mask Selector</span>
   </mat-toolbar>
 <router-outlet></router-outlet>

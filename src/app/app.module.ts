@@ -19,12 +19,18 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 // import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { TaskSelectionComponent } from './task-selection/task-selection.component';
+import {MatCardModule} from '@angular/material/card';
+import {MatTooltipModule} from '@angular/material/tooltip';
+import {MatMenuModule} from '@angular/material/menu';
+
 @NgModule({
   declarations: [
     AppComponent,
     FrameExtractorComponent,
     LoginComponent,
-    MiddleLayerComponent
+    MiddleLayerComponent,
+    TaskSelectionComponent
   ],
   imports: [
     FormsModule,
@@ -40,7 +46,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     CoolSocialLoginButtonsModule,
     MatToolbarModule,
     MatButtonToggleModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatCardModule,
+    MatTooltipModule,
+    MatMenuModule
   ],
   // providers: [{provide: LocationStrategy, useClass: HashLocationStrategy}],
   providers: [],

@@ -2,7 +2,9 @@ import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpService } from '../services/http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Mode } from '../Mode-enum';
 
+declare var SuperGif: any;
 @Component({
   selector: 'app-frame-extractor',
   templateUrl: './frame-extractor.component.html',
@@ -12,11 +14,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 
 export class FrameExtractorComponent {
-  @ViewChild('videoElement') videoElement!: ElementRef;
+  @ViewChild('gifElement') gifElement!: ElementRef;
   @ViewChild('videoCanva') canva!: ElementRef;
   @ViewChild('whiteCanva') whiteCanva!: ElementRef;
+  @ViewChild('newImg') newImg!: ElementRef;
 
+  // Task type: segmentation or assessment
+  task: boolean = true; // false = assessment, true = segmentation
 
+  // Assessment mode
+  _mode = Mode;
+  base_delay: number = 0;
+  delay_multiplier: number = 100;
   video_height!: number;
   video_width!: number;
   selectedSector!: string;
@@ -58,7 +67,7 @@ export class FrameExtractorComponent {
   // static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/"
 
   // OFFLINE
-  static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10.0-jSLmRpeC.mp4"
+  static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif"
   videoUrl: string = FrameExtractorComponent.baseVideoUrl;
   videoOffset: string ="";
   // If I'm dragging the mouse on the canvas
@@ -91,9 +100,19 @@ export class FrameExtractorComponent {
   // Payload to send to the server
   Payload: any[] = [];
 
-  currentTime: number = 0;
+  // currentTime: number = 0;
 
-  constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar){}
+  lastCanvaFrame = new Uint8ClampedArray();
+  gif_index:number = 0;
+  gif_real_index:number = 0;
+  fr_list: any[] = [];
+  gif_real_idx_list: number[] = [];
+  current_fr!: Uint8ClampedArray;
+  gif:any;
+
+  wwidth: number = 0;
+  // ngif:boolean = true;
+  constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar, private page: ElementRef){}
 
   // ONLINE
   // COMMENTA PER FARLO FUNZIONARE OFFLINE
@@ -132,53 +151,178 @@ export class FrameExtractorComponent {
   //   );
   // }
 
-  onVideoLoaded() {
+  onImageLoaded(event: any) {
     // Wait for the video to load (?)
     setTimeout(() => {
-      
-      console.log(this.videoElement.nativeElement);
-      
-      // Get the video height and width of the video
-      let h = this.videoElement.nativeElement.clientHeight;
-      let w = this.videoElement.nativeElement.clientWidth;
-      this.video_height = h;
-      this.video_width = w;
-      this.center_y = this.video_height/2;
-      this.center_x = this.video_width/2;
-      this.radius = Math.min(this.video_height, this.video_width)/10;
-      
-      this.red_r = this.radius;
-      this.green_r = this.radius+20;
-      this.blue_r = this.radius+40;
-
-      console.log("Center: ",this.center_x, this.center_y)
-
-      // Set the initial position of the circles
-      this.red_x = this.center_x;
-      this.red_y = this.center_y;
-      this.green_x = this.center_x;
-      this.green_y = this.center_y;
-      this.blue_x = this.center_x;
-      this.blue_y = this.center_y;
-
-      console.log(h,w);
-
-      // Set a white background to hide the video when zooming (WIP)
-      let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
-      contextWhiteCanva.beginPath();
-      contextWhiteCanva.rect(0, 0, w, h);
-      contextWhiteCanva.fillStyle = "white";
-      contextWhiteCanva.fill();
-
-      // Necessary to get the firs frame of the video
-      this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
-
-      console.log("Video width: ", this.videoElement.nativeElement.clientWidth);
-      console.log("Video height: ", this.videoElement.nativeElement.clientHeight);
-
-      console.log("Video width: ", this.videoElement.nativeElement.videoWidth);
-      console.log("Video height: ", this.videoElement.nativeElement.videoHeight);
+      if(this.task){
+        this.gifElement.nativeElement.setAttribute('rel:auto_play', '0');
+      } else{
+        this.gifElement.nativeElement.setAttribute('rel:auto_play', '1');
+      }
+      this.gif = SuperGif({gif:this.gifElement.nativeElement, draw_while_loading:false});
+      this.gif.load(function(this:any){
+        console.log('oh hey, now the gif is loaded');
+        console.log("number of frames",this.gif.get_frames().length)
+        this.fr_list = this.gif.get_frames();
+        this.base_delay = this.fr_list[0].delay * 10;
+        this.gif.get_frames().forEach(function (this:any, element:any){
+          if(this.gif_index == 0){
+            console.log("First frame")
+            this.gif_real_idx_list.push(this.gif_index);
+            this.current_fr = element.data.data;
+            this.gif_index++;
+          }
+          else{
+            if(!this.areSameFrame(this.current_fr, element.data.data)){
+              this.gif_real_idx_list.push(this.gif_index);
+              this.current_fr = element.data.data;
+            }
+            this.gif_index++;
+          }
+        }.bind(this));
+        console.log("number of real indexes:", this.gif_real_idx_list.length)
+        console.log("real indexes:", this.gif_real_idx_list)
+        this.gif_index = 0;
+        this.page.nativeElement.querySelectorAll('.jsgif').forEach((element:any) => {
+          console.log("removing", element)
+          element.remove();
+        });
+        this.newImg.nativeElement.width =  this.fr_list[0].data.width;
+        this.newImg.nativeElement.height =  this.fr_list[0].data.height;
+        this.updateCanvas(0);
+        if(!this.task){
+          this.animate();
+        }else{
+          // console.log(this.newImg);
+          
+          // Get the video height and width of the video
+          let h = this.newImg.nativeElement.clientHeight;
+          let w = this.newImg.nativeElement.clientWidth;
+          this.video_height = h;
+          this.video_width = w;
+          this.center_y = this.video_height/2;
+          this.center_x = this.video_width/2;
+          this.radius = Math.min(this.video_height, this.video_width)/10;
+          
+          this.red_r = this.radius;
+          this.green_r = this.radius+20;
+          this.blue_r = this.radius+40;
+          
+          console.log("Center: ",this.center_x, this.center_y)
+          
+          // Set the initial position of the circles
+          this.red_x = this.center_x;
+          this.red_y = this.center_y;
+          this.green_x = this.center_x;
+          this.green_y = this.center_y;
+          this.blue_x = this.center_x;
+          this.blue_y = this.center_y;
+          
+          console.log(h,w);
+          
+          // Set a white background to hide the video when zooming
+          let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+          contextWhiteCanva.beginPath();
+          contextWhiteCanva.rect(0, 0, w, h);
+          contextWhiteCanva.fillStyle = "white";
+          contextWhiteCanva.fill();
+          
+          // // Necessary to get the firs frame of the video
+          // this.newImg.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
+        }
+        }.bind(this));
     });
+  }
+
+  animate(){
+    // console.log("animation")
+    // console.log(this)
+    const mult = 100 / this.delay_multiplier;
+    // console.log(mult)
+    // console.log(this.base_delay * mult)
+    setTimeout(this.animate.bind(this), this.base_delay * mult);
+    this.next(Mode.animation);
+  }
+    
+  onBitmapCreate(res:any){
+    const ctx = this.newImg.nativeElement.getContext('2d');
+    // console.log(res)
+    ctx.drawImage(createImageBitmap(this.fr_list[0].data), 0, 0, this.fr_list[0].data.width, this.fr_list[0].data.height)
+  }
+
+  updateCanvas(index: number){
+    const that = this;
+    createImageBitmap(this.fr_list[index].data).then(
+      function(bitmap:any){
+        // console.log(bitmap)
+        // console.log(that)
+        const ctx = that.newImg.nativeElement.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height)
+
+        if(that.isZoomed){ 
+          that.zoomIn();
+        }
+      }.bind(that)
+    ).catch(
+      function(error:any){
+        console.error(error)
+      }.bind(that)
+    );
+  }
+
+  next(mode:Mode){
+    if(this.gif_index == (this.gif_real_idx_list.length - 1)){
+      if (mode == Mode.frame_by_frame){
+        console.log("sei già all'ultimo frame")
+        this.openSnackBar("Video Finished!!!");
+        // Save the mask data API call
+        // ONLINE
+        // COMMENTA PER FARLO FUNZIONARE OFFLINE
+        // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
+        //   console.log(data);
+        // });
+        this.isVideoActive = false;
+        return;
+      }
+      else{
+        console.log("sei all'ultimo frame, torniamo al primo")
+        this.gif_index = 0;
+        this.gif_real_index = 0;
+      }
+    }
+    this.gif_index++;
+    this.gif_real_index = this.gif_real_idx_list[this.gif_index];
+    console.log(this.gif_real_index)
+    // this.gif.move_to(this.gif_real_index);
+    this.updateCanvas(this.gif_real_index);
+  }
+
+  prev(mode:Mode){
+    if(this.gif_index == 0){
+      if (mode == Mode.frame_by_frame){
+        console.log("sei già al primo frame")
+        return;
+      }
+      else{
+        console.log("sei al primo frame, torniamo al primo")
+        this.gif_index = (this.gif_real_idx_list.length - 1);
+        this.gif_real_index = (this.gif_real_idx_list.length - 1);
+      }
+    }
+    this.gif_index--;
+    this.gif_real_index = this.gif_real_idx_list[this.gif_index];
+    console.log(this.gif_real_index)
+    // this.gif.move_to(this.gif_real_index);
+    this.updateCanvas(this.gif_real_index);
+  }
+
+  areSameFrame(frame1:any, frame2:any): boolean{
+    for(let i = 0; i < frame1.length; i++){
+      if((frame1[i] - frame2[i]) != 0){
+        return false;
+      }
+    }
+    return true;
   }
 
   // Change style of the selected circle and the current selector
@@ -274,7 +418,7 @@ export class FrameExtractorComponent {
         // this.center_y = e.offsetY;
         console.log("Setting circle center to click coordinates");
       }
-    } else if (this.isZooming && !this.isZoomed && e.srcElement.tagName == "VIDEO"){
+    } else if (this.isZooming && !this.isZoomed && e.srcElement.tagName == "CANVAS"){
       // Zoom
       // Start dragging the rectangle to zoom in
       this.isDraggingRect = true;
@@ -291,10 +435,9 @@ export class FrameExtractorComponent {
   mouseUp(e:any){
     // Stop dragging the circle
     this.isDragging = false;
-
     // Zoom
     // Stop dragging the rectangle to zoom in
-    if(this.isZooming && !this.isZoomed && e.srcElement.tagName == "VIDEO"){
+    if(this.isZooming && !this.isZoomed && e.srcElement.tagName == "CANVAS"){
       this.z_x2 = e.offsetX;
       this.z_y2 = e.offsetY;
       this.zoomIn();
@@ -303,7 +446,7 @@ export class FrameExtractorComponent {
       this.isDraggingRect = false;
       this.isZooming = false; 
       this.isZoomed = true;
-    }else if(this.isZooming && !this.isZoomed && e.srcElement.tagName != "VIDEO"){
+    }else if(this.isZooming && !this.isZoomed && e.srcElement.tagName != "CANVAS"){
       // Don't do enything if mouse is released outside the video frame
       this.isDraggingRect = false;
       this.isZooming = false;
@@ -351,10 +494,10 @@ export class FrameExtractorComponent {
     this.canva.nativeElement.getContext('2d').clearRect(0, 0, (this.canva.nativeElement.width), (this.canva.nativeElement.height));
 
     // Scale factor to scale the coordinates to the showed video size
-    let scale_fac = this.videoElement.nativeElement.videoWidth/this.canva.nativeElement.width;
+    let scale_fac = this.newImg.nativeElement.width/this.canva.nativeElement.width;
 
     // Original and current ratio of the video
-    let originalRatio = this.videoElement.nativeElement.videoWidth/this.videoElement.nativeElement.videoHeight;
+    let originalRatio = this.newImg.nativeElement.width/this.newImg.nativeElement.height;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
     
     console.log("originalRatio",originalRatio);
@@ -376,24 +519,30 @@ export class FrameExtractorComponent {
     if(currentRatio > originalRatio){
       k = this.canva.nativeElement.width / scaledWidth;
       console.log("k: ", k);
-      this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
+      this.canva.nativeElement.getContext('2d').drawImage(this.newImg.nativeElement,
         Math.min(scaledX1, scaledX2),
         Math.min(scaledY1, scaledY2),
         scaledWidth,
         scaledHeight,
-        0, (this.videoElement.nativeElement.clientHeight/2)-(scaledHeight*k/2), this.canva.nativeElement.width, scaledHeight*k
+        0, (this.canva.nativeElement.clientHeight/2)-(scaledHeight*k/2), this.canva.nativeElement.width, scaledHeight*k
       );
     } else {
       k = this.canva.nativeElement.height / scaledHeight;
       console.log("k: ", k);
-      this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,
+      this.canva.nativeElement.getContext('2d').drawImage(this.newImg.nativeElement,
         Math.min(scaledX1, scaledX2),
         Math.min(scaledY1, scaledY2),
         scaledWidth,
         scaledHeight,
-        (this.videoElement.nativeElement.clientWidth/2)-(scaledWidth*k/2), 0, scaledWidth*k, this.canva.nativeElement.height
+        (this.canva.nativeElement.clientWidth/2)-(scaledWidth*k/2), 0, scaledWidth*k, this.canva.nativeElement.height
       );
     }
+    // Set a white background to hide the video when zooming (WIP)
+    let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+    contextWhiteCanva.beginPath();
+    contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
+    contextWhiteCanva.fillStyle = "white";
+    contextWhiteCanva.fill();
   }
 
   nextFrame(){
@@ -401,7 +550,7 @@ export class FrameExtractorComponent {
     this.isZooming = false;
 
     // Scale coefficient to original video size
-    let originalCoef = this.videoElement.nativeElement.videoWidth/this.video_width;
+    let originalCoef = this.newImg.nativeElement.width/this.video_width;
 
     // Sectors data to send to the server
     let maskDataRed: any[] = [];
@@ -472,10 +621,12 @@ export class FrameExtractorComponent {
       b: maskDataBlue
     });
     // Go to next frame
-    console.log("Time at play: ", this.videoElement.nativeElement.currentTime);
-    this.currentTime = this.videoElement.nativeElement.currentTime;
-    this.videoElement.nativeElement.play();
-    this.currentProgress = Math.trunc( (this.videoElement.nativeElement.currentTime / this.videoElement.nativeElement.duration) * 100) + 2;
+    console.log("Time at play: ", this.newImg.nativeElement.currentTime);
+    // this.currentTime = this.newImg.nativeElement.currentTime;
+    // this.newImg.nativeElement.play();
+    this.next(Mode.frame_by_frame);
+
+    this.currentProgress = this.gif_index / this.fr_list.length * 100;
     console.log("currentProgress:", this.currentProgress);
   }
 
@@ -483,12 +634,14 @@ export class FrameExtractorComponent {
     this.isZooming = false;
     // Frame skipped -> no selection
     this.Payload.push({
-      r: [-1],
-      g: [-1],
-      b: [-1]
+      r: [],
+      g: [],
+      b: []
     });
     // Go to next frame
-    this.videoElement.nativeElement.play();
+    this.next(Mode.frame_by_frame);
+    this.currentProgress = this.gif_index / this.fr_list.length * 100;
+    // this.newImg.nativeElement.play();
   }
 
   // Change the radius of the circle based on the scroll
@@ -504,11 +657,10 @@ export class FrameExtractorComponent {
   }
 
   // Resize canvas related stuff based on the new window size
-  // TODO: Fix the bug when the window is resized while zooming
   onWindowResize(e:any){
     console.log("Window resized")
-    let h = this.videoElement.nativeElement.clientHeight;
-    let w = this.videoElement.nativeElement.clientWidth;
+    let h = this.newImg.nativeElement.clientHeight;
+    let w = this.newImg.nativeElement.clientWidth;
     this.red_x = this.red_x * w / this.video_width;
     this.red_y = this.red_y * h / this.video_height;
     this.red_r = this.red_r * w / this.video_width;
@@ -520,7 +672,10 @@ export class FrameExtractorComponent {
     this.blue_r = this.blue_r * w / this.video_width;
     this.video_height = h;
     this.video_width = w;
-    this.isZoomed = false;
+    if(this.isZoomed){
+      this.adaptCirclesZoomOut();
+      this.isZoomed = false;
+    }
   }
 
   // Enable zooming
@@ -530,64 +685,66 @@ export class FrameExtractorComponent {
 
   // Go back to full video view
   restoreView(){
-    this.canva.nativeElement.getContext('2d').drawImage(this.videoElement.nativeElement,0,0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight, 0,0, this.video_width,this.video_height);
+    this.canva.nativeElement.getContext('2d').drawImage(this.newImg.nativeElement,0,0, this.newImg.nativeElement.width, this.newImg.nativeElement.height, 0,0, this.video_width,this.video_height);
     this.isZoomed = false;    
 
     // Place circles in the correct position
     this.adaptCirclesZoomOut();
   }
 
-  // Frame by frame callback
-  doSomethingWithFrame = (now:any, metadata:any) =>{
-    console.log(metadata.presentedFrames);
+  // // TO DELETE (UNUSED)
+  // // Frame by frame callback 
+  // doSomethingWithFrame = (now:any, metadata:any) =>{
+  //   console.log(metadata.presentedFrames);
 
     
     
-    this.videoElement.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
-    this.videoElement.nativeElement.pause();
-    let timeElapsed: number;
-    if(this.currentTime == 0)
-      timeElapsed = this.videoElement.nativeElement.currentTime;
-    else
-      timeElapsed = this.videoElement.nativeElement.currentTime - this.currentTime;
-    console.log("Time elapsed: ", timeElapsed)
-    if(timeElapsed < 0.05){
-      console.log("Something went wrong, skipping frame")
-      this.videoElement.nativeElement.play();
-    }
-    console.log("Time at pause: ", this.videoElement.nativeElement.currentTime);
+  //   this.newImg.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
+  //   this.newImg.nativeElement.pause();
+  //   let timeElapsed: number;
+  //   if(this.currentTime == 0)
+  //     timeElapsed = this.newImg.nativeElement.currentTime;
+  //   else
+  //     timeElapsed = this.newImg.nativeElement.currentTime - this.currentTime;
+  //   console.log("Time elapsed: ", timeElapsed)
+  //   if(timeElapsed < 0.05){
+  //     console.log("Something went wrong, skipping frame")
+  //     this.newImg.nativeElement.play();
+  //   }
+  //   console.log("Time at pause: ", this.newImg.nativeElement.currentTime);
 
-    let contextCanva = this.canva.nativeElement.getContext('2d');
+  //   let contextCanva = this.canva.nativeElement.getContext('2d');
     
-    contextCanva.drawImage(this.videoElement.nativeElement, 0, 0, this.videoElement.nativeElement.videoWidth, this.videoElement.nativeElement.videoHeight
-      ,0,0, this.video_width,this.video_height);
+  //   contextCanva.drawImage(this.newImg.nativeElement, 0, 0, this.newImg.nativeElement.width, this.newImg.nativeElement.height
+  //     ,0,0, this.video_width,this.video_height);
     
-    // If previous frame was zoomed, zoom also the current one
-    if(this.isZoomed){ 
-      this.zoomIn();
-    }
+  //   // If previous frame was zoomed, zoom also the current one
+  //   if(this.isZoomed){ 
+  //     this.zoomIn();
+  //   }
 
-    // Set a white background to hide the video when zooming
-    let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
-    contextWhiteCanva.beginPath();
-    contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
-    contextWhiteCanva.fillStyle = "white";
-    contextWhiteCanva.fill();
-  }
+  //   // Set a white background to hide the video when zooming
+  //   let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
+  //   contextWhiteCanva.beginPath();
+  //   contextWhiteCanva.rect(0, 0, this.video_width, this.video_height);
+  //   contextWhiteCanva.fillStyle = "white";
+  //   contextWhiteCanva.fill();
+  // }
 
-  // Video ended callback
-  videoEnded(e:any){
-    console.log("Video Ended");
-    this.openSnackBar("Video Finished!!!");
-    // Save the mask data API call
-    // ONLINE
-    // COMMENTA PER FARLO FUNZIONARE OFFLINE
-    // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
-    //   console.log(data);
-    // });
-    this.isVideoActive = false;
-  // console.log("fire");
-  }
+  // // TO DELETE (UNUSED)
+  // // Video ended callback
+  // videoEnded(e:any){
+  //   console.log("Video Ended");
+  //   this.openSnackBar("Video Finished!!!");
+  //   // Save the mask data API call
+  //   // ONLINE
+  //   // COMMENTA PER FARLO FUNZIONARE OFFLINE
+  //   // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
+  //   //   console.log(data);
+  //   // });
+  //   this.isVideoActive = false;
+  // // console.log("fire");
+  // }
 
   // Open a snackbar with a message
   openSnackBar(toastMessage: string) {
@@ -596,11 +753,11 @@ export class FrameExtractorComponent {
 
   // Place the circles in the correct position after zooming in
   adaptCirclesZoomIn(){
-    let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
+    let originalRatio = this.newImg.nativeElement.clientWidth/this.newImg.nativeElement.clientHeight;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
 
-    let Cy = this.videoElement.nativeElement.clientHeight;
-    let Cx = this.videoElement.nativeElement.clientWidth;
+    let Cy = this.newImg.nativeElement.clientHeight;
+    let Cx = this.newImg.nativeElement.clientWidth;
 
     let minX = Math.min(this.z_x1, this.z_x2);
     let minY = Math.min(this.z_y1, this.z_y2);
@@ -622,6 +779,9 @@ export class FrameExtractorComponent {
       this.blue_x = (this.blue_x - minX)*k;
       this.blue_y = (this.blue_y - minY)*k + top;
       this.blue_r = this.blue_r*k/scale_fac;
+      this.center_x = (this.center_x - minX)*k;
+      this.center_y = (this.center_y - minY)*k + top;
+      this.radius = this.radius*k/scale_fac;
     }
     else{
       let k = Cy / rectHeight;
@@ -637,16 +797,19 @@ export class FrameExtractorComponent {
       this.blue_x = (this.blue_x - minX)*k + left;
       this.blue_y = (this.blue_y - minY)*k;
       this.blue_r = this.blue_r*k/scale_fac;
+      this.center_x = (this.center_x - minX)*k + left;
+      this.center_y = (this.center_y - minY)*k;
+      this.radius = this.radius*k/scale_fac;
     }
   }
 
   // Place the circles in the correct position after zooming out
   adaptCirclesZoomOut(){
-    let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
+    let originalRatio = this.newImg.nativeElement.clientWidth/this.newImg.nativeElement.clientHeight;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
 
-    let Cy = this.videoElement.nativeElement.clientHeight;
-    let Cx = this.videoElement.nativeElement.clientWidth;
+    let Cy = this.newImg.nativeElement.clientHeight;
+    let Cx = this.newImg.nativeElement.clientWidth;
 
     let minX = Math.min(this.z_x1, this.z_x2);
     let minY = Math.min(this.z_y1, this.z_y2);
@@ -668,6 +831,9 @@ export class FrameExtractorComponent {
       this.blue_x = (this.blue_x)/k + minX;
       this.blue_y = (this.blue_y - top)/k + minY;
       this.blue_r = this.blue_r/k*scale_fac;
+      this.center_x = (this.center_x)/k + minX;
+      this.center_y = (this.center_y - top)/k + minY;
+      this.radius = this.radius/k*scale_fac;
     }
     else{
       let k = Cy / rectHeight;
@@ -683,18 +849,21 @@ export class FrameExtractorComponent {
       this.blue_x = (this.blue_x - left)/k + minX;
       this.blue_y = (this.blue_y)/k + minY;
       this.blue_r = this.blue_r/k*scale_fac;
+      this.center_x = (this.center_x - left)/k + minX;
+      this.center_y = (this.center_y)/k + minY;
+      this.radius = this.radius/k*scale_fac;
     }
   }
 
   // Calculate the actual position on the client screen of the circle passed as parameter
   scaleBack(X : number, Y : number, R : number){
-    // let scale_fac = this.videoElement.nativeElement.videoWidth/this.canva.nativeElement.width; 
+    // let scale_fac = this.newImg.nativeElement.width/this.canva.nativeElement.width; 
 
-    let originalRatio = this.videoElement.nativeElement.clientWidth/this.videoElement.nativeElement.clientHeight;
+    let originalRatio = this.newImg.nativeElement.clientWidth/this.newImg.nativeElement.clientHeight;
     let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
     
-    let Cy = this.videoElement.nativeElement.clientHeight;
-    let Cx = this.videoElement.nativeElement.clientWidth;
+    let Cy = this.newImg.nativeElement.clientHeight;
+    let Cx = this.newImg.nativeElement.clientWidth;
 
     let minX = Math.min(this.z_x1, this.z_x2);
     let minY = Math.min(this.z_y1, this.z_y2);
