@@ -1,5 +1,6 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { HttpService } from '../services/http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Mode } from '../Mode-enum';
@@ -83,7 +84,8 @@ export class FrameExtractorComponent {
 
   // Activates the video player
   isVideoActive = true;
-
+  isVideoLoading = true;
+  
   // Index of the membrane selector toggles
   
   selectorNames: string[] = ['red', 'green', 'blue'];
@@ -96,6 +98,7 @@ export class FrameExtractorComponent {
 
   // Current frame number
   currentProgress: number = 1;
+  totalProgress: number = 1;
 
   // Payload to send to the server
   Payload: any[] = [];
@@ -112,18 +115,29 @@ export class FrameExtractorComponent {
 
   wwidth: number = 0;
   // ngif:boolean = true;
-  constructor(private httpC: HttpService, private rotuer: Router, private snackBar: MatSnackBar, private page: ElementRef){}
+  constructor(private httpC: HttpService, private router: Router, private snackBar: MatSnackBar, private page: ElementRef, private route: ActivatedRoute){}
 
   // ONLINE
   // COMMENTA PER FARLO FUNZIONARE OFFLINE
-  // ngOnInit() {
+  ngOnInit() {
+
+    this.route.params.subscribe(params => {
+      console.log(params);
+      let tempTask = params["id"];
+      if (tempTask == "segmentation"){
+        this.task = true;
+      }
+      else if (tempTask == "Assessment"){
+        this.task = false;
+      }
+    });
     
   //   // You can also initialize the float field in the ngOnInit() method
   //   // Check if the user is logged in
   //   this.token = localStorage.getItem('authToken');
   //   if(this.token == null){
   //     console.log("Not Authorized to access the videos");
-  //     this.rotuer.navigate(["Login"]);
+  //     this.router.navigate(["Login"]);
   //   }
     
   //   // // Get the first video to review
@@ -144,12 +158,12 @@ export class FrameExtractorComponent {
   //       console.log("Encountered Error: ", error.status);
   //       localStorage.removeItem('authToken');
   //       console.log("Redirecting to Authentication Page");
-  //       this.rotuer.navigate(["Middle"]);
+  //       this.router.navigate(["Middle"]);
   //       // Redirects to Google Login that redirects to MiddleComponent
   //       window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
   //     }
   //   );
-  // }
+  }
 
   onImageLoaded(event: any) {
     // Wait for the video to load (?)
@@ -230,7 +244,8 @@ export class FrameExtractorComponent {
           // // Necessary to get the firs frame of the video
           // this.newImg.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
         }
-        }.bind(this));
+        this.isVideoLoading = false;
+      }.bind(this));
     });
   }
 
@@ -275,6 +290,7 @@ export class FrameExtractorComponent {
       if (mode == Mode.frame_by_frame){
         console.log("sei già all'ultimo frame")
         this.openSnackBar("Video Finished!!!");
+        console.log("Payload: ", this.Payload)
         // Save the mask data API call
         // ONLINE
         // COMMENTA PER FARLO FUNZIONARE OFFLINE
@@ -325,13 +341,52 @@ export class FrameExtractorComponent {
     return true;
   }
 
-  nextFrame(){
-    // console.log("Frames data: ", this.maskData);
+  prevFrame(){
+    // If frame has already been processed, restore the frame data from the payload
+    if(this.gif_real_index > 0){
+      if(this.isZoomed){
+        this.restoreView();
+        this.adaptCirclesZoomOut();
+      }
+      this.red_x = this.Payload[this.gif_real_index-1].r[0].x;
+      this.red_y = this.Payload[this.gif_real_index-1].r[0].y;
+      this.red_r = this.Payload[this.gif_real_index-1].r[0].r;
+      this.green_x = this.Payload[this.gif_real_index-1].g[0].x;
+      this.green_y = this.Payload[this.gif_real_index-1].g[0].y;
+      this.green_r = this.Payload[this.gif_real_index-1].g[0].r;
+      this.blue_x = this.Payload[this.gif_real_index-1].b[0].x;
+      this.blue_y = this.Payload[this.gif_real_index-1].b[0].y;
+      this.blue_r = this.Payload[this.gif_real_index-1].b[0].r;
+      // this.onSelectorChange(this.currentSelector);
+
+      let originalCoef = this.newImg.nativeElement.width/this.video_width;
+
+      // Scale the coordinates to the client gif size from the original gif size
+      this.red_x = this.red_x / originalCoef;
+      this.red_y = this.red_y / originalCoef;
+      this.green_x = this.green_x / originalCoef;
+      this.green_y = this.green_y / originalCoef;
+      this.blue_x = this.blue_x / originalCoef;
+      this.blue_y = this.blue_y / originalCoef;
+      this.red_r = this.red_r / originalCoef;
+      this.green_r = this.green_r / originalCoef;
+      this.blue_r = this.blue_r / originalCoef;
+    }
+    
     this.isZooming = false;
 
+    
+    this.prev(Mode.frame_by_frame);
+    this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
+  }
+
+  nextFrame(){
     // Scale coefficient to original video size
     let originalCoef = this.newImg.nativeElement.width/this.video_width;
 
+    this.isZooming = false;
+
+    // If frame has already been processed, restore the frame data from the payload
     // Sectors data to send to the server
     let maskDataRed: any[] = [];
     let maskDataGreen: any[] = [];
@@ -394,20 +449,65 @@ export class FrameExtractorComponent {
       r: blueR
     });
 
-    // Create payload for current frame
-    this.Payload.push({
-      r: maskDataRed, 
-      g: maskDataGreen,
-      b: maskDataBlue
-    });
+    console.log("Payload: ", this.Payload.length);
+    console.log("Gif index: ", this.gif_real_index);
+
+    if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
+      // Update payload for current frame
+      this.Payload[this.gif_real_index] = {
+        r: maskDataRed, 
+        g: maskDataGreen,
+        b: maskDataBlue
+      };
+    }else{
+      // Create payload for current frame
+      this.Payload.push({
+        r: maskDataRed, 
+        g: maskDataGreen,
+        b: maskDataBlue
+      });
+    }
+
+    console.log("Payload: ", this.Payload);
+
     // Go to next frame
     console.log("Time at play: ", this.newImg.nativeElement.currentTime);
     // this.currentTime = this.newImg.nativeElement.currentTime;
     // this.newImg.nativeElement.play();
     this.next(Mode.frame_by_frame);
 
+    if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
+      if(this.isZoomed){
+        this.restoreView();
+        this.adaptCirclesZoomOut();
+      }
+      this.red_x = this.Payload[this.gif_real_index].r[0].x;
+      this.red_y = this.Payload[this.gif_real_index].r[0].y;
+      this.red_r = this.Payload[this.gif_real_index].r[0].r;
+      this.green_x = this.Payload[this.gif_real_index].g[0].x;
+      this.green_y = this.Payload[this.gif_real_index].g[0].y;
+      this.green_r = this.Payload[this.gif_real_index].g[0].r;
+      this.blue_x = this.Payload[this.gif_real_index].b[0].x;
+      this.blue_y = this.Payload[this.gif_real_index].b[0].y;
+      this.blue_r = this.Payload[this.gif_real_index].b[0].r;
+      // this.onSelectorChange(this.currentSelector);
+
+      // Scale the coordinates to the client gif size from the original gif size
+      this.red_x = this.red_x / originalCoef;
+      this.red_y = this.red_y / originalCoef;
+      this.green_x = this.green_x / originalCoef;
+      this.green_y = this.green_y / originalCoef;
+      this.blue_x = this.blue_x / originalCoef;
+      this.blue_y = this.blue_y / originalCoef;
+      this.red_r = this.red_r / originalCoef;
+      this.green_r = this.green_r / originalCoef;
+      this.blue_r = this.blue_r / originalCoef;
+    }
+
     this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
-    console.log("currentProgress:", this.currentProgress);
+    if(this.gif_real_index == this.Payload.length){
+      this.totalProgress = this.currentProgress;
+    }
   }
 
   skipFrame(){
@@ -421,7 +521,9 @@ export class FrameExtractorComponent {
     // Go to next frame
     this.next(Mode.frame_by_frame);
     this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
-    // this.newImg.nativeElement.play();
+    if(this.gif_real_index == this.Payload.length){
+      this.totalProgress = this.currentProgress;
+    }
   }
 
 
@@ -461,6 +563,7 @@ export class FrameExtractorComponent {
   mouseUp(e:any){
     // Stop dragging the circle
     this.isDragging = false;
+    console.log("Circle center: (", this.center_x, ",", this.center_y, ")");
     // Zoom
     // Stop dragging the rectangle to zoom in
     if(this.isZooming && !this.isZoomed && e.srcElement.tagName == "CANVAS"){
@@ -705,106 +808,18 @@ export class FrameExtractorComponent {
 
   // Place the circles in the correct position after zooming in
   adaptCirclesZoomIn(){
-    let originalRatio = this.newImg.nativeElement.clientWidth/this.newImg.nativeElement.clientHeight;
-    let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
-
-    let Cy = this.newImg.nativeElement.clientHeight;
-    let Cx = this.newImg.nativeElement.clientWidth;
-
-    let minX = Math.min(this.z_x1, this.z_x2);
-    let minY = Math.min(this.z_y1, this.z_y2);
-
-    let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
-    let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
-
-    if (originalRatio > currentRatio){
-      let k = Cx / rectWidth;
-      let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2)); 
-      let scale_fac = originalRatio/currentRatio;
-
-      this.red_x = (this.red_x - minX)*k;
-      this.red_y = (this.red_y - minY)*k + top;
-      this.red_r = this.red_r*k/scale_fac;
-      this.green_x = (this.green_x - minX)*k;
-      this.green_y = (this.green_y - minY)*k + top;
-      this.green_r = this.green_r*k/scale_fac;
-      this.blue_x = (this.blue_x - minX)*k;
-      this.blue_y = (this.blue_y - minY)*k + top;
-      this.blue_r = this.blue_r*k/scale_fac;
-      this.center_x = (this.center_x - minX)*k;
-      this.center_y = (this.center_y - minY)*k + top;
-      this.radius = this.radius*k/scale_fac;
-    }
-    else{
-      let k = Cy / rectHeight;
-      let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2));
-      let scale_fac = currentRatio/originalRatio;
-
-      this.red_x = (this.red_x - minX)*k + left;
-      this.red_y = (this.red_y - minY)*k;
-      this.red_r = this.red_r*k/scale_fac;
-      this.green_x = (this.green_x - minX)*k + left;
-      this.green_y = (this.green_y - minY)*k;
-      this.green_r = this.green_r*k/scale_fac;
-      this.blue_x = (this.blue_x - minX)*k + left;
-      this.blue_y = (this.blue_y - minY)*k;
-      this.blue_r = this.blue_r*k/scale_fac;
-      this.center_x = (this.center_x - minX)*k + left;
-      this.center_y = (this.center_y - minY)*k;
-      this.radius = this.radius*k/scale_fac;
-    }
+    [this.red_x, this.red_y, this.red_r] = this.scaleFront(this.red_x,this.red_y,this.red_r);
+    [this.green_x, this.green_y, this.green_r] = this.scaleFront(this.green_x,this.green_y,this.green_r);
+    [this.blue_x, this.blue_y, this.blue_r] = this.scaleFront(this.blue_x,this.blue_y,this.blue_r);
+    [this.center_x, this.center_y, this.radius] = this.scaleFront(this.center_x,this.center_y,this.radius);
   }
 
   // Place the circles in the correct position after zooming out
   adaptCirclesZoomOut(){
-    let originalRatio = this.newImg.nativeElement.clientWidth/this.newImg.nativeElement.clientHeight;
-    let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
-
-    let Cy = this.newImg.nativeElement.clientHeight;
-    let Cx = this.newImg.nativeElement.clientWidth;
-
-    let minX = Math.min(this.z_x1, this.z_x2);
-    let minY = Math.min(this.z_y1, this.z_y2);
-
-    let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
-    let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
-
-    if (originalRatio > currentRatio){
-      let k = Cx / rectWidth;
-      let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2));
-      let scale_fac = originalRatio/currentRatio;
-
-      this.red_x = (this.red_x)/k + minX;
-      this.red_y = (this.red_y - top)/k + minY;
-      this.red_r = this.red_r/k*scale_fac;
-      this.green_x = (this.green_x)/k + minX;
-      this.green_y = (this.green_y - top)/k + minY;
-      this.green_r = this.green_r/k*scale_fac;
-      this.blue_x = (this.blue_x)/k + minX;
-      this.blue_y = (this.blue_y - top)/k + minY;
-      this.blue_r = this.blue_r/k*scale_fac;
-      this.center_x = (this.center_x)/k + minX;
-      this.center_y = (this.center_y - top)/k + minY;
-      this.radius = this.radius/k*scale_fac;
-    }
-    else{
-      let k = Cy / rectHeight;
-      let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2));
-      let scale_fac = currentRatio/originalRatio;
-
-      this.red_x = (this.red_x - left)/k + minX;
-      this.red_y = (this.red_y)/k + minY;
-      this.red_r = this.red_r/k*scale_fac;
-      this.green_x = (this.green_x - left)/k + minX;
-      this.green_y = (this.green_y)/k + minY;
-      this.green_r = this.green_r/k*scale_fac;
-      this.blue_x = (this.blue_x - left)/k + minX;
-      this.blue_y = (this.blue_y)/k + minY;
-      this.blue_r = this.blue_r/k*scale_fac;
-      this.center_x = (this.center_x - left)/k + minX;
-      this.center_y = (this.center_y)/k + minY;
-      this.radius = this.radius/k*scale_fac;
-    }
+    [this.red_x, this.red_y, this.red_r] = this.scaleBack(this.red_x,this.red_y,this.red_r);
+    [this.green_x, this.green_y, this.green_r] = this.scaleBack(this.green_x,this.green_y,this.green_r);
+    [this.blue_x, this.blue_y, this.blue_r] = this.scaleBack(this.blue_x,this.blue_y,this.blue_r);
+    [this.center_x, this.center_y, this.radius] = this.scaleBack(this.center_x,this.center_y,this.radius);
   }
 
   // Calculate the actual position on the client screen of the circle passed as parameter
@@ -851,6 +866,57 @@ export class FrameExtractorComponent {
       circleCenterY = (Y / k) + minY;
 
       circleRadius = R / k;
+
+      console.log("Circle center: ", circleCenterX, circleCenterY);
+      console.log("Circle radius: ", circleRadius);
+    }
+
+    return [circleCenterX, circleCenterY, circleRadius];
+  }
+
+  scaleFront(X : number, Y : number, R : number){
+    // let scale_fac = this.newImg.nativeElement.width/this.canva.nativeElement.width;
+
+    let originalRatio = this.newImg.nativeElement.clientWidth/this.newImg.nativeElement.clientHeight;
+    let currentRatio = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2))/(Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    let Cy = this.newImg.nativeElement.clientHeight;
+    let Cx = this.newImg.nativeElement.clientWidth;
+
+    let minX = Math.min(this.z_x1, this.z_x2);
+    let minY = Math.min(this.z_y1, this.z_y2);
+
+    let rectWidth = (Math.max(this.z_x1, this.z_x2) - Math.min(this.z_x1, this.z_x2));
+    let rectHeight = (Math.max(this.z_y1, this.z_y2) - Math.min(this.z_y1, this.z_y2));
+
+    let circleCenterX;
+    let circleCenterY;
+    let circleRadius;
+
+    if(originalRatio < currentRatio){
+      console.log("horizontal condition");
+
+      let k = Cx / rectWidth;
+
+      let top = (Cy/2) - ((rectHeight/rectWidth)*(Cx/2));
+
+      circleCenterX = ((X - minX) * k);
+      circleCenterY = ((Y - minY) * k) + top;
+
+      circleRadius = R * k;
+
+      console.log("Circle center: ", circleCenterX, circleCenterY);
+      console.log("Circle radius: ", circleRadius);
+    } else {
+      console.log("vertical condition");
+      let k = Cy / rectHeight;
+
+      let left = (Cx/2) - ((rectWidth/rectHeight)*(Cy/2));
+
+      circleCenterX = ((X - minX) * k) + left;
+      circleCenterY = ((Y - minY) * k);
+
+      circleRadius = R * k;
 
       console.log("Circle center: ", circleCenterX, circleCenterY);
       console.log("Circle radius: ", circleRadius);
@@ -908,6 +974,6 @@ export class FrameExtractorComponent {
 
   navigateTo(url:string){
     console.log("Navigating to:", url);
-    this.rotuer.navigate([url]);
+    this.router.navigate([url]);
   }
 }

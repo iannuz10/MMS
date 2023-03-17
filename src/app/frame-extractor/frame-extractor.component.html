@@ -18,34 +18,38 @@
     <canvas #whiteCanva id="whiteCanva" [height]="video_height" [width]="video_width"></canvas>
     <canvas #videoCanva id="videoCanva" [height]="video_height" [width]="video_width" ></canvas>
     <div id="progBar-container">
-      <mat-progress-bar mode="determinate" [value]="currentProgress"></mat-progress-bar>
+      <mat-progress-bar mode="buffer" [value]="currentProgress" [bufferValue]="totalProgress"></mat-progress-bar>
     </div>
-    <img #gifElement [hidden]="true" (load)="onImageLoaded($event)" src="https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif" 
-    rel:animated_src="https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif">
+    <img #gifElement [hidden]="true" (load)="onImageLoaded($event)" src="http://localhost/G-10.0-CTCQWJYC.gif" 
+    rel:animated_src="http://localhost/G-10.0-CTCQWJYC.gif">
   </div>
   <!---------------------------------End of Segmentation------------------------------------>
 
 
   <!---------------------------------Assessment Video player------------------------------------>
   <div *ngIf="!task">
-    <button (click)="prev(_mode.frame_by_frame)" style="z-index: 1">Previous</button>
-    <button  (click)="next(_mode.frame_by_frame)" style="z-index: 1">Next</button>
+    <button (click)="prev(_mode.frame_by_frame)" style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
+    <button  (click)="next(_mode.frame_by_frame)" style="z-index: 1"[disabled]="isVideoLoading">Next</button>
     <mat-slider min=50 max = 120>
         <input matSliderThumb [(ngModel)]="delay_multiplier">
     </mat-slider>
     <div class="video-container">
       <canvas #newImg id="newImg"></canvas>
     </div>
-    <img #gifElement [hidden]="true" *ngIf="!task" src="https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif" 
-      rel:animated_src="https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif" (load)="onImageLoaded($event)" [attr.clientWidth]="wwidth">
+    <img #gifElement [hidden]="true" *ngIf="!task" src="http://localhost/G-10.0-CTCQWJYC.gif" 
+      rel:animated_src="http://localhost/G-10.0-CTCQWJYC.gif" (load)="onImageLoaded($event)" [attr.clientWidth]="wwidth">
   </div>
   <!---------------------------------End of Assessment------------------------------------>
 
   <!---------------------------------Controls------------------------------------>
   <div class="controls-container" *ngIf="isVideoActive && task">
     <div class="button-container">
-      <button mat-raised-button matTooltip="Save current selection and proceed to next frame" color="primary" (click)="nextFrame()">Next Frame</button>
-      <button mat-raised-button matTooltip="If frame is blurred or there are errors displayed press to skip" color="warn" (click)="skipFrame()">Skip Frame</button>
+      <button mat-raised-button matTooltip="Save selection and proceed" color="primary" [disabled]="isVideoLoading"
+        (click)="nextFrame()">Next Frame</button>
+        <button mat-raised-button matTooltip="Go back" class="skip-button" [disabled]="isVideoLoading" 
+          (click)="prevFrame()">Previous Frame</button>
+      <button mat-raised-button matTooltip="Skip frame if blurred" color="warn" [disabled]="isVideoLoading" 
+        (click)="skipFrame()">Skip Frame</button>
       <h3>Selected: {{selectors.value}}</h3>
       <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
         <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
@@ -55,7 +59,7 @@
       <div class="switch">
         <p *ngIf="!isZoomed">Zoom:</p>
         <button *ngIf="!isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="zoom()" [(ngModel)]="isZooming"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="picture_in_picture"></mat-icon></button>
-        <p *ngIf="isZoomed">Home:</p>
+        <p *ngIf="isZoomed">Restore View:</p>
         <button *ngIf="isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="restoreView()"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="home"></mat-icon></button>
       </div>
     </div>
@@ -83,7 +87,7 @@
 
   <!---------------------------------Continue or quit controls------------------------------------>
   <div class="button-container" *ngIf="!isVideoActive">
-    <button mat-raised-button color="primary" (click)="navigateTo('Middle')">Try another Video!</button>
+    <button mat-raised-button color="primary" (click)="navigateTo('MainApp')">Try another Video!</button>
     <button mat-raised-button color="warn" (click)="navigateTo('Login')">Exit</button>
   </div>
   <!---------------------------------End of Continue or quit controlls------------------------------------>

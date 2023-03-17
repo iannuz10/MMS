@@ -9,6 +9,7 @@ import { AuthGuard } from './services/auth.guard';
 const routes: Routes = [
   {path: 'Login', component: LoginComponent},
   {path: 'TaskSelection', component: TaskSelectionComponent},
+  {path: 'MainApp/:id', component: FrameExtractorComponent }, 
   {path: '', component: MiddleLayerComponent},
   {path: 'MainApp',  component: FrameExtractorComponent}, // OFFLINE
   // {path: 'MainApp', canActivate:[AuthGuard], component: FrameExtractorComponent}, // ONLINE

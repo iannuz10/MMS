@@ -92,6 +92,11 @@ p{
   margin: 10px;
 }
 
+.skip-button:not([disabled]) {
+  background-color: #f2c900 !important;
+  color: #fff !important;
+}
+
 /* @media screen and (max-width: 768px) {
   .container{
     flex-direction: column;

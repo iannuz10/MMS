@@ -14,7 +14,7 @@
             </p>
         </mat-card-content>
         <mat-card-actions>
-            <button mat-raised-button color="primary" routerLink="/MainApp">Get Started</button>
+            <button mat-raised-button color="primary" [routerLink]="['/MainApp', 'Segmentation']">Get Started</button>
         </mat-card-actions>
     </mat-card>
     <mat-card>
@@ -32,7 +32,7 @@
             </p>
         </mat-card-content>
         <mat-card-actions>
-            <button mat-raised-button color="primary" routerLink="/AssessmentApp">Get Started</button>
+            <button mat-raised-button color="primary" class="WORKINPRGRESS" disabled [routerLink]="['/MainApp', 'Assessment']">Work In Progress</button>
         </mat-card-actions>
     </mat-card>
 </div>
