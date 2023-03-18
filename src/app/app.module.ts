@@ -23,14 +23,16 @@ import { TaskSelectionComponent } from './task-selection/task-selection.componen
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
-
+import { MatDialogModule } from '@angular/material/dialog';
+import { ConfirmSubmitDialogComponent } from './confirm-submit-dialog/confirm-submit-dialog.component';
 @NgModule({
   declarations: [
     AppComponent,
     FrameExtractorComponent,
     LoginComponent,
     MiddleLayerComponent,
-    TaskSelectionComponent
+    TaskSelectionComponent,
+    ConfirmSubmitDialogComponent
   ],
   imports: [
     FormsModule,
@@ -49,7 +51,8 @@ import { MatMenuModule } from '@angular/material/menu';
     MatProgressBarModule,
     MatCardModule,
     MatTooltipModule,
-    MatMenuModule
+    MatMenuModule,
+    MatDialogModule
   ],
   // providers: [{provide: LocationStrategy, useClass: HashLocationStrategy}],
   providers: [],

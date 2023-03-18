@@ -5,6 +5,8 @@ import { HttpService } from '../services/http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Mode } from '../Mode-enum';
 import { Renderer2 } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmSubmitDialogComponent } from '../confirm-submit-dialog/confirm-submit-dialog.component';
 
 declare var SuperGif: any;
 @Component({
@@ -121,7 +123,12 @@ export class FrameExtractorComponent {
   isFrameSkipped: boolean = false;
   toggleFrameSkipped: boolean = false;
 
-  constructor(private httpC: HttpService, private router: Router, private snackBar: MatSnackBar, private page: ElementRef, private route: ActivatedRoute, private renderer: Renderer2){}
+  // Dialog submit
+  isSubmitted: boolean = false;
+  
+
+  constructor(private httpC: HttpService, private router: Router, private snackBar: MatSnackBar, private page: ElementRef, 
+              private route: ActivatedRoute, private renderer: Renderer2, public dialog: MatDialog){}
 
   // ONLINE
   // COMMENTA PER FARLO FUNZIONARE OFFLINE
@@ -200,13 +207,12 @@ export class FrameExtractorComponent {
             this.gif_index++;
           }
         }.bind(this));
-        console.log("number of real indexes:", this.gif_real_idx_list.length)
-        console.log("real indexes:", this.gif_real_idx_list)
         this.gif_index = 0;
         this.page.nativeElement.querySelectorAll('.jsgif').forEach((element:any) => {
-          console.log("removing", element)
           element.remove();
         });
+        this.currentProgress = 1 / this.gif_real_idx_list.length * 100; 
+        this.totalProgress = 1 / this.gif_real_idx_list.length * 100;
         this.newImg.nativeElement.width =  this.fr_list[0].data.width;
         this.newImg.nativeElement.height =  this.fr_list[0].data.height;
         this.updateCanvas(0);
@@ -225,8 +231,6 @@ export class FrameExtractorComponent {
           this.red_r = this.radius;
           this.green_r = this.radius+20;
           this.blue_r = this.radius+40;
-          
-          console.log("Center: ",this.center_x, this.center_y)
           
           // Set the initial position of the circles
           this.red_x = this.center_x;
@@ -287,15 +291,12 @@ export class FrameExtractorComponent {
     if(this.gif_index == (this.gif_real_idx_list.length - 1)){
       if (mode == Mode.frame_by_frame){
         console.log("sei già all'ultimo frame")
-        this.openSnackBar("Video Finished!!!");
-        console.log("Payload: ", this.Payload)
-        // Save the mask data API call
-        // ONLINE
-        // COMMENTA PER FARLO FUNZIONARE OFFLINE
-        // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
-        //   console.log(data);
-        // });
-        this.isVideoActive = false;
+
+        if(this.task){
+          // Ask for confirmation to submit the payload
+          this.openDialog();
+      }
+
         return;
       }
       else{
@@ -306,7 +307,6 @@ export class FrameExtractorComponent {
     }
     this.gif_index++;
     this.gif_real_index = this.gif_real_idx_list[this.gif_index];
-    console.log(this.gif_real_index)
     // this.gif.move_to(this.gif_real_index);
     this.updateCanvas(this.gif_real_index);
   }
@@ -381,7 +381,7 @@ export class FrameExtractorComponent {
     this.isZooming = false;
 
     this.prev(Mode.frame_by_frame);
-    this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
+    this.currentProgress = (this.gif_real_index+1) / this.fr_list.length * 100;
   }
 
   nextFrame(){
@@ -473,12 +473,7 @@ export class FrameExtractorComponent {
       });
     }
 
-    console.log("Payload: ", this.Payload);
-
     // Go to next frame
-    console.log("Time at play: ", this.newImg.nativeElement.currentTime);
-    // this.currentTime = this.newImg.nativeElement.currentTime;
-    // this.newImg.nativeElement.play();
     this.next(Mode.frame_by_frame);
 
     this.isFrameSkipped = false;
@@ -519,7 +514,7 @@ export class FrameExtractorComponent {
       }
     }
 
-    this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
+    this.currentProgress = (this.gif_real_index+1) / this.fr_list.length * 100;
     if(this.gif_real_index == this.Payload.length){
       this.totalProgress = this.currentProgress;
     }
@@ -588,7 +583,7 @@ export class FrameExtractorComponent {
       }
     }
 
-    this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
+    this.currentProgress = (this.gif_real_index+1) / this.fr_list.length * 100;
     if(this.gif_real_index == this.Payload.length){
       this.totalProgress = this.currentProgress;
     }
@@ -769,7 +764,6 @@ export class FrameExtractorComponent {
   // Change style of the selected circle and the current selector
   onSelectorChange(currentVal: any){
     this.currentSelector = currentVal
-    console.log("Current Selector:", this.currentSelector);
 
     switch(this.currentSelector){
       case this.selectorNames[0]:
@@ -1088,5 +1082,25 @@ export class FrameExtractorComponent {
   navigateTo(url:string){
     console.log("Navigating to:", url);
     this.router.navigate([url]);
+  }
+
+  openDialog(): void {
+    const dialogRef = this.dialog.open(ConfirmSubmitDialogComponent);
+    dialogRef.afterClosed().subscribe(result => {
+      this.isSubmitted = result;
+      console.log('The dialog was closed');
+        if(this.isSubmitted){
+
+          console.log("Payload: ", this.Payload)
+          // Save the mask data API call
+          // ONLINE
+          // COMMENTA PER FARLO FUNZIONARE OFFLINE
+          // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
+          //   console.log(data);
+          // });
+          this.isVideoActive = false;
+          this.openSnackBar("Video Finished!!!");
+        }
+    });
   }
 }
