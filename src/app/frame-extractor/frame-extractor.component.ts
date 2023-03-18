@@ -876,7 +876,6 @@ export class FrameExtractorComponent {
     // Draw the zoomed area
     if(currentRatio > originalRatio){
       k = this.canva.nativeElement.width / scaledWidth;
-      console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.newImg.nativeElement,
         Math.min(scaledX1, scaledX2),
         Math.min(scaledY1, scaledY2),
@@ -886,7 +885,6 @@ export class FrameExtractorComponent {
       );
     } else {
       k = this.canva.nativeElement.height / scaledHeight;
-      console.log("k: ", k);
       this.canva.nativeElement.getContext('2d').drawImage(this.newImg.nativeElement,
         Math.min(scaledX1, scaledX2),
         Math.min(scaledY1, scaledY2),
@@ -960,9 +958,6 @@ export class FrameExtractorComponent {
       circleCenterY = ((Y - top) / k) + minY;
 
       circleRadius = R / k;
-
-      console.log("Circle center: ", circleCenterX, circleCenterY);
-      console.log("Circle radius: ", circleRadius);
     } else {
       console.log("vertical condition");
       let k = Cy / rectHeight;
@@ -974,8 +969,6 @@ export class FrameExtractorComponent {
 
       circleRadius = R / k;
 
-      console.log("Circle center: ", circleCenterX, circleCenterY);
-      console.log("Circle radius: ", circleRadius);
     }
 
     return [circleCenterX, circleCenterY, circleRadius];
@@ -1012,8 +1005,6 @@ export class FrameExtractorComponent {
 
       circleRadius = R * k;
 
-      console.log("Circle center: ", circleCenterX, circleCenterY);
-      console.log("Circle radius: ", circleRadius);
     } else {
       console.log("vertical condition");
       let k = Cy / rectHeight;
@@ -1025,8 +1016,6 @@ export class FrameExtractorComponent {
 
       circleRadius = R * k;
 
-      console.log("Circle center: ", circleCenterX, circleCenterY);
-      console.log("Circle radius: ", circleRadius);
     }
 
     return [circleCenterX, circleCenterY, circleRadius];
