@@ -6,14 +6,14 @@
       (wheel)="onMouseWheelScroll($event)" 
       (mousedown)="mouseDown($event)" 
       (window:mouseup)="mouseUp($event)" 
-      (mousemove)="mouseMove($event)" 
+      (window:mousemove)="mouseMove($event)" 
       (window:resize)="onWindowResize($event)">
     </canvas>
-    <svg [attr.height]="video_height" [attr.width]="video_width">
-      <circle [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>
-      <circle [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
-      <circle [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
-      <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="4" fill-opacity="0%"></rect>
+    <svg #svgElement [attr.height]="video_height" [attr.width]="video_width">
+      <circle *ngIf="!toggleFrameSkipped" [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>
+      <circle *ngIf="!toggleFrameSkipped" [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
+      <circle *ngIf="!toggleFrameSkipped" [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
+      <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="2" fill-opacity="0%"></rect>
     </svg>
     <canvas #whiteCanva id="whiteCanva" [height]="video_height" [width]="video_width"></canvas>
     <canvas #videoCanva id="videoCanva" [height]="video_height" [width]="video_width" ></canvas>
@@ -44,12 +44,13 @@
   <!---------------------------------Controls------------------------------------>
   <div class="controls-container" *ngIf="isVideoActive && task">
     <div class="button-container">
-      <button mat-raised-button matTooltip="Save selection and proceed" color="primary" [disabled]="isVideoLoading"
+      <button mat-raised-button matTooltip="Save selection and proceed" color="primary" [disabled]="isVideoLoading || toggleFrameSkipped"
         (click)="nextFrame()">Next Frame</button>
         <button mat-raised-button matTooltip="Go back" class="skip-button" [disabled]="isVideoLoading" 
           (click)="prevFrame()">Previous Frame</button>
       <button mat-raised-button matTooltip="Skip frame if blurred" color="warn" [disabled]="isVideoLoading" 
         (click)="skipFrame()">Skip Frame</button>
+      <mat-slide-toggle *ngIf="isFrameSkipped" color="warn" [(ngModel)]="toggleFrameSkipped">Toggle Frame Skip</mat-slide-toggle>
       <h3>Selected: {{selectors.value}}</h3>
       <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
         <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>

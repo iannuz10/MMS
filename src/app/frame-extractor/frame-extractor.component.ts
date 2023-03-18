@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { HttpService } from '../services/http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Mode } from '../Mode-enum';
+import { Renderer2 } from '@angular/core';
 
 declare var SuperGif: any;
 @Component({
@@ -19,6 +20,7 @@ export class FrameExtractorComponent {
   @ViewChild('videoCanva') canva!: ElementRef;
   @ViewChild('whiteCanva') whiteCanva!: ElementRef;
   @ViewChild('newImg') newImg!: ElementRef;
+  @ViewChild('svgElement') svgElement!: ElementRef;
 
   // Task type: segmentation or assessment
   task: boolean = true; // false = assessment, true = segmentation
@@ -62,6 +64,7 @@ export class FrameExtractorComponent {
   z_x2!: number;
   z_y2!: number;
 
+  // Token for server requests
   token: string | null = null;
 
   // ONLINE
@@ -69,8 +72,10 @@ export class FrameExtractorComponent {
 
   // OFFLINE
   static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif"
+
   videoUrl: string = FrameExtractorComponent.baseVideoUrl;
   videoOffset: string ="";
+
   // If I'm dragging the mouse on the canvas
   // Move cirlce
   isDragging: boolean = false;
@@ -86,25 +91,22 @@ export class FrameExtractorComponent {
   isVideoActive = true;
   isVideoLoading = true;
   
-  // Index of the membrane selector toggles
-  
+  // Circle selector and options
   selectorNames: string[] = ['red', 'green', 'blue'];
   selectorColors: string[] = ['red', 'green', 'blue'];
   circleOpacity: any[] = [0.1, 0, 0];
   strokeOpacity: any[] = [1, 0.2, 0.2];
-  
   currentSelector = this.selectorNames[0];
   circleColor = this.selectorColors[0];
 
-  // Current frame number
+  // Progress bar values
   currentProgress: number = 1;
   totalProgress: number = 1;
 
   // Payload to send to the server
   Payload: any[] = [];
 
-  // currentTime: number = 0;
-
+  // Video player
   lastCanvaFrame = new Uint8ClampedArray();
   gif_index:number = 0;
   gif_real_index:number = 0;
@@ -112,15 +114,19 @@ export class FrameExtractorComponent {
   gif_real_idx_list: number[] = [];
   current_fr!: Uint8ClampedArray;
   gif:any;
-
   wwidth: number = 0;
-  // ngif:boolean = true;
-  constructor(private httpC: HttpService, private router: Router, private snackBar: MatSnackBar, private page: ElementRef, private route: ActivatedRoute){}
+
+  // Frames skipped indeces
+  skipped_frames: number[] = [];
+  isFrameSkipped: boolean = false;
+  toggleFrameSkipped: boolean = false;
+
+  constructor(private httpC: HttpService, private router: Router, private snackBar: MatSnackBar, private page: ElementRef, private route: ActivatedRoute, private renderer: Renderer2){}
 
   // ONLINE
   // COMMENTA PER FARLO FUNZIONARE OFFLINE
   ngOnInit() {
-
+    // Get the task type from the URL
     this.route.params.subscribe(params => {
       console.log(params);
       let tempTask = params["id"];
@@ -207,8 +213,6 @@ export class FrameExtractorComponent {
         if(!this.task){
           this.animate();
         }else{
-          // console.log(this.newImg);
-          
           // Get the video height and width of the video
           let h = this.newImg.nativeElement.clientHeight;
           let w = this.newImg.nativeElement.clientWidth;
@@ -232,17 +236,12 @@ export class FrameExtractorComponent {
           this.blue_x = this.center_x;
           this.blue_y = this.center_y;
           
-          console.log(h,w);
-          
           // Set a white background to hide the video when zooming
           let contextWhiteCanva = this.whiteCanva.nativeElement.getContext('2d');
           contextWhiteCanva.beginPath();
           contextWhiteCanva.rect(0, 0, w, h);
           contextWhiteCanva.fillStyle = "white";
           contextWhiteCanva.fill();
-          
-          // // Necessary to get the firs frame of the video
-          // this.newImg.nativeElement.requestVideoFrameCallback(this.doSomethingWithFrame);
         }
         this.isVideoLoading = false;
       }.bind(this));
@@ -261,7 +260,6 @@ export class FrameExtractorComponent {
     
   onBitmapCreate(res:any){
     const ctx = this.newImg.nativeElement.getContext('2d');
-    // console.log(res)
     ctx.drawImage(createImageBitmap(this.fr_list[0].data), 0, 0, this.fr_list[0].data.width, this.fr_list[0].data.height)
   }
 
@@ -344,38 +342,44 @@ export class FrameExtractorComponent {
   prevFrame(){
     // If frame has already been processed, restore the frame data from the payload
     if(this.gif_real_index > 0){
-      if(this.isZoomed){
-        this.restoreView();
-        this.adaptCirclesZoomOut();
+      // If the previous frame was skipped (contained in skipped_frames list), hide the circles
+      if(this.skipped_frames.includes(this.gif_real_index-1)){
+        this.isFrameSkipped = true;
+        this.toggleFrameSkipped = true;
+      } else {
+        this.isFrameSkipped = false;
+        this.toggleFrameSkipped = false;
+        this.red_x = this.Payload[this.gif_real_index-1].r[0].x;
+        this.red_y = this.Payload[this.gif_real_index-1].r[0].y;
+        this.red_r = this.Payload[this.gif_real_index-1].r[0].r;
+        this.green_x = this.Payload[this.gif_real_index-1].g[0].x;
+        this.green_y = this.Payload[this.gif_real_index-1].g[0].y;
+        this.green_r = this.Payload[this.gif_real_index-1].g[0].r;
+        this.blue_x = this.Payload[this.gif_real_index-1].b[0].x;
+        this.blue_y = this.Payload[this.gif_real_index-1].b[0].y;
+        this.blue_r = this.Payload[this.gif_real_index-1].b[0].r;
+        
+        let originalCoef = this.newImg.nativeElement.width/this.video_width;
+        
+        // Scale the coordinates to the client gif size from the original gif size
+        this.red_x = this.red_x / originalCoef;
+        this.red_y = this.red_y / originalCoef;
+        this.green_x = this.green_x / originalCoef;
+        this.green_y = this.green_y / originalCoef;
+        this.blue_x = this.blue_x / originalCoef;
+        this.blue_y = this.blue_y / originalCoef;
+        this.red_r = this.red_r / originalCoef;
+        this.green_r = this.green_r / originalCoef;
+        this.blue_r = this.blue_r / originalCoef;
+        this.onSelectorChange(this.currentSelector);
+        if(this.isZoomed){
+          this.adaptCirclesZoomIn();
+        }
       }
-      this.red_x = this.Payload[this.gif_real_index-1].r[0].x;
-      this.red_y = this.Payload[this.gif_real_index-1].r[0].y;
-      this.red_r = this.Payload[this.gif_real_index-1].r[0].r;
-      this.green_x = this.Payload[this.gif_real_index-1].g[0].x;
-      this.green_y = this.Payload[this.gif_real_index-1].g[0].y;
-      this.green_r = this.Payload[this.gif_real_index-1].g[0].r;
-      this.blue_x = this.Payload[this.gif_real_index-1].b[0].x;
-      this.blue_y = this.Payload[this.gif_real_index-1].b[0].y;
-      this.blue_r = this.Payload[this.gif_real_index-1].b[0].r;
-      // this.onSelectorChange(this.currentSelector);
-
-      let originalCoef = this.newImg.nativeElement.width/this.video_width;
-
-      // Scale the coordinates to the client gif size from the original gif size
-      this.red_x = this.red_x / originalCoef;
-      this.red_y = this.red_y / originalCoef;
-      this.green_x = this.green_x / originalCoef;
-      this.green_y = this.green_y / originalCoef;
-      this.blue_x = this.blue_x / originalCoef;
-      this.blue_y = this.blue_y / originalCoef;
-      this.red_r = this.red_r / originalCoef;
-      this.green_r = this.green_r / originalCoef;
-      this.blue_r = this.blue_r / originalCoef;
     }
     
     this.isZooming = false;
 
-    
     this.prev(Mode.frame_by_frame);
     this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
   }
@@ -449,9 +453,6 @@ export class FrameExtractorComponent {
       r: blueR
     });
 
-    console.log("Payload: ", this.Payload.length);
-    console.log("Gif index: ", this.gif_real_index);
-
     if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
       // Update payload for current frame
       this.Payload[this.gif_real_index] = {
@@ -459,6 +460,10 @@ export class FrameExtractorComponent {
         g: maskDataGreen,
         b: maskDataBlue
       };
+      // If frame was skipped, remove it from the skipped frames list
+      if(this.skipped_frames.includes(this.gif_real_index)){
+        this.skipped_frames.splice(this.skipped_frames.indexOf(this.gif_real_index), 1);
+      }
     }else{
       // Create payload for current frame
       this.Payload.push({
@@ -476,32 +481,42 @@ export class FrameExtractorComponent {
     // this.newImg.nativeElement.play();
     this.next(Mode.frame_by_frame);
 
-    if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
-      if(this.isZoomed){
-        this.restoreView();
-        this.adaptCirclesZoomOut();
-      }
-      this.red_x = this.Payload[this.gif_real_index].r[0].x;
-      this.red_y = this.Payload[this.gif_real_index].r[0].y;
-      this.red_r = this.Payload[this.gif_real_index].r[0].r;
-      this.green_x = this.Payload[this.gif_real_index].g[0].x;
-      this.green_y = this.Payload[this.gif_real_index].g[0].y;
-      this.green_r = this.Payload[this.gif_real_index].g[0].r;
-      this.blue_x = this.Payload[this.gif_real_index].b[0].x;
-      this.blue_y = this.Payload[this.gif_real_index].b[0].y;
-      this.blue_r = this.Payload[this.gif_real_index].b[0].r;
-      // this.onSelectorChange(this.currentSelector);
+    this.isFrameSkipped = false;
+    this.toggleFrameSkipped = false;
 
-      // Scale the coordinates to the client gif size from the original gif size
-      this.red_x = this.red_x / originalCoef;
-      this.red_y = this.red_y / originalCoef;
-      this.green_x = this.green_x / originalCoef;
-      this.green_y = this.green_y / originalCoef;
-      this.blue_x = this.blue_x / originalCoef;
-      this.blue_y = this.blue_y / originalCoef;
-      this.red_r = this.red_r / originalCoef;
-      this.green_r = this.green_r / originalCoef;
-      this.blue_r = this.blue_r / originalCoef;
+    if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
+      if(this.skipped_frames.includes(this.gif_real_index)){
+        this.isFrameSkipped = true;
+        this.toggleFrameSkipped = true;
+      } else {
+        this.isFrameSkipped = false;
+        this.toggleFrameSkipped = false;
+        this.red_x = this.Payload[this.gif_real_index].r[0].x;
+        this.red_y = this.Payload[this.gif_real_index].r[0].y;
+        this.red_r = this.Payload[this.gif_real_index].r[0].r;
+        this.green_x = this.Payload[this.gif_real_index].g[0].x;
+        this.green_y = this.Payload[this.gif_real_index].g[0].y;
+        this.green_r = this.Payload[this.gif_real_index].g[0].r;
+        this.blue_x = this.Payload[this.gif_real_index].b[0].x;
+        this.blue_y = this.Payload[this.gif_real_index].b[0].y;
+        this.blue_r = this.Payload[this.gif_real_index].b[0].r;
+        
+        // Scale the coordinates to the client gif size from the original gif size
+        this.red_x = this.red_x / originalCoef;
+        this.red_y = this.red_y / originalCoef;
+        this.green_x = this.green_x / originalCoef;
+        this.green_y = this.green_y / originalCoef;
+        this.blue_x = this.blue_x / originalCoef;
+        this.blue_y = this.blue_y / originalCoef;
+        this.red_r = this.red_r / originalCoef;
+        this.green_r = this.green_r / originalCoef;
+        this.blue_r = this.blue_r / originalCoef;
+        this.onSelectorChange(this.currentSelector);
+
+        if(this.isZoomed){
+          this.adaptCirclesZoomIn();
+        }
+      }
     }
 
     this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
@@ -511,15 +526,68 @@ export class FrameExtractorComponent {
   }
 
   skipFrame(){
+    let originalCoef = this.newImg.nativeElement.width/this.video_width;
+
     this.isZooming = false;
+
     // Frame skipped -> no selection
-    this.Payload.push({
-      r: [],
-      g: [],
-      b: []
-    });
+    if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
+      // Update payload for current frame
+      this.Payload[this.gif_real_index] = {
+        r: [],
+        g: [],
+        b: []
+      };
+    }else{
+      // Create payload for current frame
+      this.Payload.push({
+        r: [],
+        g: [],
+        b: []
+      });
+    }
+
+    this.skipped_frames.push(this.gif_real_index);
+
     // Go to next frame
     this.next(Mode.frame_by_frame);
+
+    // Chakc if frame was already processed
+    if(this.gif_real_index != (this.Payload.length) && this.Payload.length != 0){
+      if(this.skipped_frames.includes(this.gif_real_index)){
+        this.isFrameSkipped = true;
+        this.toggleFrameSkipped = true;
+      } else {
+        this.isFrameSkipped = false;
+        this.toggleFrameSkipped = false;
+        this.red_x = this.Payload[this.gif_real_index].r[0].x;
+        this.red_y = this.Payload[this.gif_real_index].r[0].y;
+        this.red_r = this.Payload[this.gif_real_index].r[0].r;
+        this.green_x = this.Payload[this.gif_real_index].g[0].x;
+        this.green_y = this.Payload[this.gif_real_index].g[0].y;
+        this.green_r = this.Payload[this.gif_real_index].g[0].r;
+        this.blue_x = this.Payload[this.gif_real_index].b[0].x;
+        this.blue_y = this.Payload[this.gif_real_index].b[0].y;
+        this.blue_r = this.Payload[this.gif_real_index].b[0].r;
+        
+        // Scale the coordinates to the client gif size from the original gif size
+        this.red_x = this.red_x / originalCoef;
+        this.red_y = this.red_y / originalCoef;
+        this.green_x = this.green_x / originalCoef;
+        this.green_y = this.green_y / originalCoef;
+        this.blue_x = this.blue_x / originalCoef;
+        this.blue_y = this.blue_y / originalCoef;
+        this.red_r = this.red_r / originalCoef;
+        this.green_r = this.green_r / originalCoef;
+        this.blue_r = this.blue_r / originalCoef;
+        this.onSelectorChange(this.currentSelector);
+
+        if(this.isZoomed){
+          this.adaptCirclesZoomIn();
+        }
+      }
+    }
+
     this.currentProgress = this.gif_real_index / this.fr_list.length * 100;
     if(this.gif_real_index == this.Payload.length){
       this.totalProgress = this.currentProgress;
@@ -563,7 +631,6 @@ export class FrameExtractorComponent {
   mouseUp(e:any){
     // Stop dragging the circle
     this.isDragging = false;
-    console.log("Circle center: (", this.center_x, ",", this.center_y, ")");
     // Zoom
     // Stop dragging the rectangle to zoom in
     if(this.isZooming && !this.isZoomed && e.srcElement.tagName == "CANVAS"){
@@ -583,6 +650,48 @@ export class FrameExtractorComponent {
   }
 
   mouseMove(e:any){
+    // Lines
+    // Draw a vertical and a horizontal line that follows the mouse
+    // Draw only if the mouse is inside the video frame
+    const svgRect = this.svgElement.nativeElement.getBoundingClientRect();
+    if (e.clientX < svgRect.left || e.clientX > svgRect.right || e.clientY < svgRect.top || e.clientY > svgRect.bottom) {
+      // Mouse is outside the SVG element, hide the lines
+      const lines = this.svgElement.nativeElement.querySelectorAll("line");
+      for (let i = 0; i < lines.length; i++) {
+        this.renderer.setStyle(lines[i], "display", "none");
+      }
+    } else {
+      // Mouse is inside the SVG element, show the lines
+      const lines = this.svgElement.nativeElement.querySelectorAll("line");
+      for (let i = 0; i < lines.length; i++) {
+        this.renderer.setStyle(lines[i], "display", "block");
+      }
+
+      // Remove the previous lines from the SVG element
+      for (let i = 0; i < lines.length; i++) {
+        this.renderer.removeChild(this.svgElement.nativeElement, lines[i]);
+      }
+
+      // Add new lines to the SVG element that follow the mouse
+      const newHorizontalLine = this.renderer.createElement("line", "svg");
+      this.renderer.setAttribute(newHorizontalLine, "x1", "0");
+      this.renderer.setAttribute(newHorizontalLine, "y1", String(e.offsetY));
+      this.renderer.setAttribute(newHorizontalLine, "x2", String(this.svgElement.nativeElement.clientWidth));
+      this.renderer.setAttribute(newHorizontalLine, "y2", String(e.offsetY));
+      this.renderer.setAttribute(newHorizontalLine, "stroke", "red");
+      this.renderer.setAttribute(newHorizontalLine, "stroke-width", "0.3");
+      this.renderer.appendChild(this.svgElement.nativeElement, newHorizontalLine);
+
+      const newVerticalLine = this.renderer.createElement("line", "svg");
+      this.renderer.setAttribute(newVerticalLine, "x1", String(e.offsetX));
+      this.renderer.setAttribute(newVerticalLine, "y1", "0");
+      this.renderer.setAttribute(newVerticalLine, "x2", String(e.offsetX));
+      this.renderer.setAttribute(newVerticalLine, "y2", String(this.svgElement.nativeElement.clientHeight));
+      this.renderer.setAttribute(newVerticalLine, "stroke", "red");
+      this.renderer.setAttribute(newVerticalLine, "stroke-width", "0.3");
+      this.renderer.appendChild(this.svgElement.nativeElement, newVerticalLine);
+    }
+
     // Moving circle 
     // Circle must not go out of the video
     if (this.isDragging && this.center_x + e.movementX > 0 && this.center_x + e.movementX < this.video_width && this.center_y + e.movementY > 0 && this.center_y + e.movementY < this.video_height){
@@ -590,9 +699,10 @@ export class FrameExtractorComponent {
       // this.center_x = this.center_x + e.movementX;
       // this.center_y = this.center_y + e.movementY;
     }
+
     // Zoom
     // Drawing rectangle
-    if(this.isZooming && !this.isZoomed){
+    if(this.isZooming && !this.isZoomed && e.srcElement.tagName == "CANVAS"){
       let rectWidth = e.offsetX - this.rect_x1;
       let rectHight = e.offsetY - this.rect_y1;
       
@@ -645,6 +755,9 @@ export class FrameExtractorComponent {
     this.blue_x = this.blue_x * w / this.video_width;
     this.blue_y = this.blue_y * h / this.video_height;
     this.blue_r = this.blue_r * w / this.video_width;
+    this.center_x = this.center_x * w / this.video_width;
+    this.center_y = this.center_y * h / this.video_height;
+    this.radius = this.radius * w / this.video_width;
     this.video_height = h;
     this.video_width = w;
     if(this.isZoomed){
