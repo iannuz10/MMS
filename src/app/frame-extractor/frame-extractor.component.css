@@ -40,6 +40,11 @@ canvas{
   pointer-events: none;
 }
 
+#skipCanva{
+  z-index: 5;
+  pointer-events: none;
+}
+
 button{
   margin: 10px;
 }

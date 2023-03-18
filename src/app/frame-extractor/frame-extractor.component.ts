@@ -23,6 +23,7 @@ export class FrameExtractorComponent {
   @ViewChild('whiteCanva') whiteCanva!: ElementRef;
   @ViewChild('newImg') newImg!: ElementRef;
   @ViewChild('svgElement') svgElement!: ElementRef;
+  @ViewChild('skipCanva') skipCanva!: ElementRef;
 
   // Task type: segmentation or assessment
   task: boolean = true; // false = assessment, true = segmentation
@@ -291,12 +292,10 @@ export class FrameExtractorComponent {
     if(this.gif_index == (this.gif_real_idx_list.length - 1)){
       if (mode == Mode.frame_by_frame){
         console.log("sei già all'ultimo frame")
-
         if(this.task){
           // Ask for confirmation to submit the payload
           this.openDialog();
       }
-
         return;
       }
       else{
@@ -346,6 +345,7 @@ export class FrameExtractorComponent {
       if(this.skipped_frames.includes(this.gif_real_index-1)){
         this.isFrameSkipped = true;
         this.toggleFrameSkipped = true;
+        this.drawFrameSkipOverlay();
       } else {
         this.isFrameSkipped = false;
         this.toggleFrameSkipped = false;
@@ -483,6 +483,7 @@ export class FrameExtractorComponent {
       if(this.skipped_frames.includes(this.gif_real_index)){
         this.isFrameSkipped = true;
         this.toggleFrameSkipped = true;
+        this.drawFrameSkipOverlay();
       } else {
         this.isFrameSkipped = false;
         this.toggleFrameSkipped = false;
@@ -552,6 +553,7 @@ export class FrameExtractorComponent {
       if(this.skipped_frames.includes(this.gif_real_index)){
         this.isFrameSkipped = true;
         this.toggleFrameSkipped = true;
+        this.drawFrameSkipOverlay();
       } else {
         this.isFrameSkipped = false;
         this.toggleFrameSkipped = false;
@@ -1091,5 +1093,25 @@ export class FrameExtractorComponent {
           this.openSnackBar("Video Finished!!!");
         }
     });
+  }
+
+  drawFrameSkipOverlay(){
+    let ctxSkip = this.skipCanva.nativeElement.getContext('2d');
+    ctxSkip.clearRect(0, 0, this.video_width, this.video_height);
+    ctxSkip.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctxSkip.fillRect(0, 0, this.video_width, this.video_height);
+    ctxSkip.fillStyle = 'white';
+    ctxSkip.font = 'bold 24px Arial';
+    ctxSkip.textAlign = 'center';
+    ctxSkip.fillText('Image Skipped', this.video_width / 2, this.video_height / 2);
+  }
+
+  checkIfSkipped(){
+    if(this.toggleFrameSkipped){
+      this.drawFrameSkipOverlay();
+    } else {
+      let ctxSkip = this.skipCanva.nativeElement.getContext('2d');
+      ctxSkip.clearRect(0, 0, this.video_width, this.video_height);
+    }
   }
 }

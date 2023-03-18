@@ -17,6 +17,7 @@
     </svg>
     <canvas #whiteCanva id="whiteCanva" [height]="video_height" [width]="video_width"></canvas>
     <canvas #videoCanva id="videoCanva" [height]="video_height" [width]="video_width" ></canvas>
+    <canvas #skipCanva id="skipCanva" [height]="video_height" [width]="video_width" ></canvas>
     <div id="progBar-container">
       <mat-progress-bar mode="buffer" [value]="currentProgress" [bufferValue]="totalProgress"></mat-progress-bar>
     </div>
@@ -50,7 +51,7 @@
           (click)="prevFrame()">Previous Frame</button>
       <button mat-raised-button matTooltip="Skip frame if blurred" color="warn" [disabled]="isVideoLoading" 
         (click)="skipFrame()">Skip Frame</button>
-      <mat-slide-toggle matTooltip="Turn this off to restore the frame" *ngIf="isFrameSkipped" color="warn" [(ngModel)]="toggleFrameSkipped">Toggle Frame Skip</mat-slide-toggle>
+      <mat-slide-toggle matTooltip="Turn this off to restore the frame" *ngIf="isFrameSkipped" color="warn" [(ngModel)]="toggleFrameSkipped" (click)="checkIfSkipped()">Toggle Frame Skip</mat-slide-toggle>
       <h3></h3> <!-- Spacer ( do not remove, it messes up the layout for some reason :D ) -->
       <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
         <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
