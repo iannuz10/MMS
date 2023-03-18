@@ -50,8 +50,8 @@
           (click)="prevFrame()">Previous Frame</button>
       <button mat-raised-button matTooltip="Skip frame if blurred" color="warn" [disabled]="isVideoLoading" 
         (click)="skipFrame()">Skip Frame</button>
-      <mat-slide-toggle *ngIf="isFrameSkipped" color="warn" [(ngModel)]="toggleFrameSkipped">Toggle Frame Skip</mat-slide-toggle>
-      <h3>Selected: {{selectors.value}}</h3>
+      <mat-slide-toggle matTooltip="Turn this off to restore the frame" *ngIf="isFrameSkipped" color="warn" [(ngModel)]="toggleFrameSkipped">Toggle Frame Skip</mat-slide-toggle>
+      <h3></h3> <!-- Spacer ( do not remove, it messes up the layout for some reason :D ) -->
       <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
         <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
         <mat-button-toggle [value]="selectorNames[1]">{{selectorNames[1]}}</mat-button-toggle>
