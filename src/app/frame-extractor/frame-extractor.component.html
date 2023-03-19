@@ -28,9 +28,13 @@
 
 
   <!---------------------------------Assessment Video player------------------------------------>
-  <div *ngIf="!task">
-    <button (click)="prev(_mode.frame_by_frame)" style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
-    <button  (click)="next(_mode.frame_by_frame)" style="z-index: 1"[disabled]="isVideoLoading">Next</button>
+  <div *ngIf="isVideoActive && !task">
+    <button mat-raised-button color="primary" (click)="prev(_mode.frame_by_frame)" style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
+    <!-- <mat-slide-toggle color="primary" [(ngModel)]="isVideoPaused" (click)="playPause()">Play/Pause</mat-slide-toggle> -->
+    <mat-button-toggle-group name="ingredients" aria-label="Ingredients" multiple>
+      <mat-button-toggle (click)="playPause()">Play/Pause</mat-button-toggle>
+    </mat-button-toggle-group>
+    <button mat-raised-button color="primary" (click)="next(_mode.frame_by_frame)" style="z-index: 1"[disabled]="isVideoLoading">Next</button>
     <mat-slider min=50 max = 120>
         <input matSliderThumb [(ngModel)]="delay_multiplier">
     </mat-slider>
@@ -38,11 +42,19 @@
       <canvas #newImg id="newImg"></canvas>
     </div>
     <img #gifElement [hidden]="true" *ngIf="!task" src="http://localhost/G-10.0-CTCQWJYC.gif" 
-      rel:animated_src="http://localhost/G-10.0-CTCQWJYC.gif" (load)="onImageLoaded($event)" [attr.clientWidth]="wwidth">
+    rel:animated_src="http://localhost/G-10.0-CTCQWJYC.gif" (load)="onImageLoaded($event)" [attr.clientWidth]="wwidth">
   </div>
+  
+  <!---------------------------------Assessment Controls------------------------------------>
+  <div class="button-container" *ngIf="isVideoActive && !task">
+    <button mat-raised-button color="primary" (click)="setGood()">GOOD</button>
+    <button mat-raised-button color="warn" (click)="setBad()">BAD</button>
+  </div>
+  <!-------------------------------End of Assessment Controls------------------------------->
+  
   <!---------------------------------End of Assessment------------------------------------>
 
-  <!---------------------------------Controls------------------------------------>
+  <!---------------------------------Segmentation Controls------------------------------------>
   <div class="controls-container" *ngIf="isVideoActive && task">
     <div class="button-container">
       <button mat-raised-button matTooltip="Save selection and proceed" color="primary" [disabled]="isVideoLoading || toggleFrameSkipped"

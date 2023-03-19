@@ -35,6 +35,8 @@ export class FrameExtractorComponent {
   video_height!: number;
   video_width!: number;
   selectedSector!: string;
+  isVideoPaused: boolean = false;
+  sampleQuality!: boolean;
   
   // Current circle position
   center_x: number = 0;
@@ -254,13 +256,14 @@ export class FrameExtractorComponent {
   }
 
   animate(){
-    // console.log("animation")
-    // console.log(this)
-    const mult = 100 / this.delay_multiplier;
-    // console.log(mult)
-    // console.log(this.base_delay * mult)
-    setTimeout(this.animate.bind(this), this.base_delay * mult);
-    this.next(Mode.animation);
+    if(!this.isVideoPaused){
+      // console.log(this)
+      const mult = 100 / this.delay_multiplier;
+      // console.log(mult)
+      // console.log(this.base_delay * mult)
+      setTimeout(this.animate.bind(this), this.base_delay * mult);
+      this.next(Mode.animation);
+    }
   }
     
   onBitmapCreate(res:any){
@@ -299,9 +302,11 @@ export class FrameExtractorComponent {
         return;
       }
       else{
-        console.log("sei all'ultimo frame, torniamo al primo")
-        this.gif_index = 0;
-        this.gif_real_index = 0;
+        if(!this.task && !this.isVideoPaused){
+          console.log("sei all'ultimo frame, torniamo al primo")
+          this.gif_index = 0;
+          this.gif_real_index = 0;
+        }
       }
     }
     this.gif_index++;
@@ -1085,16 +1090,27 @@ export class FrameExtractorComponent {
       this.isSubmitted = result;
       console.log('The dialog was closed');
         if(this.isSubmitted){
+          if(this.task){
+            console.log("Payload: ", this.Payload)
+            // Save the mask data API call
+            // ONLINE
+            // COMMENTA PER FARLO FUNZIONARE OFFLINE
+            // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
+            //   console.log(data);
+            // });
+            this.isVideoActive = false;
+            this.openSnackBar("Video Finished!!!");
+          } else {
+            // Insert this.sampleQuality in the payload and send it to the server
+            this.Payload.push(this.sampleQuality);
+            console.log("Payload: ", this.Payload)
+            
+            // TODO: SEND THE PAYLOAD TO THE SERVER
 
-          console.log("Payload: ", this.Payload)
-          // Save the mask data API call
-          // ONLINE
-          // COMMENTA PER FARLO FUNZIONARE OFFLINE
-          // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
-          //   console.log(data);
-          // });
-          this.isVideoActive = false;
-          this.openSnackBar("Video Finished!!!");
+            this.isVideoActive = false;
+            this.openSnackBar("Task Finished!!!");
+            this.isVideoPaused = true;
+          }
         }
     });
   }
@@ -1107,7 +1123,7 @@ export class FrameExtractorComponent {
     ctxSkip.fillStyle = 'white';
     ctxSkip.font = 'bold 24px Arial';
     ctxSkip.textAlign = 'center';
-    ctxSkip.fillText('Image Skipped', this.video_width / 2, this.video_height / 2);
+    ctxSkip.fillText('Frame Skipped', this.video_width / 2, this.video_height / 2);
   }
 
   checkIfSkipped(){
@@ -1117,5 +1133,27 @@ export class FrameExtractorComponent {
       let ctxSkip = this.skipCanva.nativeElement.getContext('2d');
       ctxSkip.clearRect(0, 0, this.video_width, this.video_height);
     }
+  }
+
+  // Assessment task functions
+  playPause(){
+    console.log("Play/Pause");
+    console.log("isVideoPaused: ", this.isVideoPaused);
+    if(this.isVideoPaused){
+      this.isVideoPaused = false;
+      this.animate();
+    } else {
+      this.isVideoPaused = true;
+    }
+  }
+
+  setGood(){
+    this.sampleQuality = true;
+    this.openDialog();
+  }
+
+  setBad(){
+    this.sampleQuality = false;
+    this.openDialog();
   }
 }
