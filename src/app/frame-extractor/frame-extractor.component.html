@@ -89,7 +89,7 @@
 
   <!---------------------------------Continue or quit controls------------------------------------>
   <div class="button-container" *ngIf="!isVideoActive">
-    <button mat-raised-button color="primary" (click)="navigateTo('MainApp')">Try another Video!</button>
+    <button mat-raised-button color="primary" (click)="refresh()">Try another Video!</button>
     <button mat-raised-button color="warn" (click)="navigateTo('Login')">Exit</button>
   </div>
   <!---------------------------------End of Continue or quit controlls------------------------------------>

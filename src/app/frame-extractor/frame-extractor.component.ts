@@ -1075,6 +1075,10 @@ export class FrameExtractorComponent {
     this.router.navigate([url]);
   }
 
+  refresh(): void {
+    window.location.reload();
+  }
+
   openDialog(): void {
     const dialogRef = this.dialog.open(ConfirmSubmitDialogComponent);
     dialogRef.afterClosed().subscribe(result => {
