@@ -78,24 +78,32 @@
       </div>
     </div>
     <div class="slider-container">
-      <div class="slider">
-        <p>Radius:</p>
-        <mat-slider min="1" [max]="video_height/2" >
-          <input matSliderThumb (ngModelChange)="onSliderRadiusChange()" [(ngModel)]="radius">
-        </mat-slider>
-      </div>
-      <div class="slider">
-        <p>X:</p>
-        <mat-slider min="1" [max]="video_width" >
-          <input matSliderThumb (ngModelChange)="onSliderXChange()" [(ngModel)]="center_x">
-        </mat-slider>
-      </div>
-      <div class="slider">
-        <p>Y:</p>
-        <mat-slider min="1" [max]="video_height" >
-          <input matSliderThumb (ngModelChange)="onSliderYChange()" [(ngModel)]="center_y">
-        </mat-slider>
-      </div>
+      <mat-card>
+        <div class="slider">
+          <p>Radius: 
+          </p>
+          <mat-slider min="1" [max]="video_height/2" >
+            <input matSliderThumb (ngModelChange)="onSliderRadiusChange()" [(ngModel)]="radius">
+          </mat-slider>
+        </div>
+        <mat-icon matTooltip="Tip: Use your mouse scroll wheel to adjust circles radius.">help</mat-icon>
+      </mat-card>
+      <mat-card>
+        <div class="slider">
+          <p>X:</p>
+          <mat-slider min="1" [max]="video_width" >
+            <input matSliderThumb (ngModelChange)="onSliderXChange()" [(ngModel)]="center_x">
+          </mat-slider>
+        </div>
+      </mat-card>
+      <mat-card>
+        <div class="slider">
+          <p>Y:</p>
+          <mat-slider min="1" [max]="video_height" >
+            <input matSliderThumb (ngModelChange)="onSliderYChange()" [(ngModel)]="center_y">
+          </mat-slider>
+        </div>
+      </mat-card>
     </div>
   </div>
 
