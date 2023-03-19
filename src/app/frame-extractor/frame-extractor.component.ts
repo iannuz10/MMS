@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild, OnDestroy  } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { HttpService } from '../services/http.service';
@@ -1155,5 +1155,11 @@ export class FrameExtractorComponent {
   setBad(){
     this.sampleQuality = false;
     this.openDialog();
+  }
+
+  ngOnDestroy(){
+    // Stop the animation
+    this.isVideoActive = false;
+    this.isVideoPaused = true;
   }
 }
