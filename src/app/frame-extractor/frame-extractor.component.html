@@ -2,16 +2,24 @@
 
   <!---------------------------------Segmentation Controls------------------------------------>
   <div>
-    <button *ngIf="isVideoActive && !task" mat-raised-button color="primary" (click)="prev(_mode.frame_by_frame)" style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
-    <!-- <mat-slide-toggle color="primary" [(ngModel)]="isVideoPaused" (click)="playPause()">Play/Pause</mat-slide-toggle> -->
+    <button *ngIf="isVideoActive && !task" 
+      mat-raised-button color="primary" 
+      (click)="prev(_mode.frame_by_frame)" 
+      style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
+      
     <mat-button-toggle-group *ngIf="isVideoActive && !task" name="ingredients" aria-label="Ingredients" multiple>
       <mat-button-toggle (click)="playPause()">Play/Pause</mat-button-toggle>
     </mat-button-toggle-group>
+
     <button *ngIf="isVideoActive && !task" mat-raised-button color="primary" (click)="next(_mode.frame_by_frame)" style="z-index: 1"[disabled]="isVideoLoading">Next</button>
+    
     <mat-slider *ngIf="isVideoActive && !task" min=50 max = 120>
         <input matSliderThumb [(ngModel)]="delay_multiplier">
     </mat-slider>
+
     <div class="video-container" >
+      <mat-spinner *ngIf="isVideoLoading"></mat-spinner>
+
       <!---------------------------------Assessment Video player------------------------------------>
       <canvas *ngIf="isVideoActive && !task" #newImg id="newImg"></canvas>
 
@@ -23,23 +31,43 @@
         (window:mousemove)="mouseMove($event)" 
         (window:resize)="onWindowResize($event)">
       </canvas>
-      <svg #svgElement [attr.height]="video_height" [attr.width]="video_width" *ngIf="isVideoActive && task">ù
-        <circle *ngIf="!toggleFrameSkipped" [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>        <circle *ngIf="!toggleFrameSkipped" [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
-        <circle *ngIf="!toggleFrameSkipped" [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
-        <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="2" fill-opacity="0%"></rect>
+
+      <!-- SVG for circles and zoom rectangle  -->
+      <svg #svgElement *ngIf="isVideoActive && task && !isVideoLoading" [attr.height]="video_height" [attr.width]="video_width" >
+        <circle *ngIf="!toggleFrameSkipped" 
+          [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" 
+          [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" 
+          stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]">
+        </circle>        
+        <circle *ngIf="!toggleFrameSkipped" 
+          [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" 
+          [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" 
+          stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]">
+        </circle>
+        <circle *ngIf="!toggleFrameSkipped" 
+          [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" 
+          [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" 
+          stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]">
+        </circle>
+        <rect *ngIf="isDraggingRect" 
+          [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" 
+          stroke="gray" stroke-width="2" fill-opacity="0%">
+        </rect>
       </svg>
+
+      <!-- Canvas used for zoom and skip -->
       <canvas *ngIf="isVideoActive && task" #whiteCanva id="whiteCanva" [height]="video_height" [width]="video_width"></canvas>
       <canvas *ngIf="isVideoActive && task" #videoCanva id="videoCanva" [height]="video_height" [width]="video_width" ></canvas>
       <canvas *ngIf="isVideoActive && task" #skipCanva id="skipCanva" [height]="video_height" [width]="video_width" ></canvas>
+
       <div *ngIf="isVideoActive && task" id="progBar-container">
-        <mat-progress-bar mode="buffer" [value]="currentProgress" [bufferValue]="totalProgress"></mat-progress-bar>
+        <mat-progress-bar *ngIf="!isVideoLoading" mode="buffer" [value]="currentProgress" [bufferValue]="totalProgress"></mat-progress-bar>
       </div>
+
+      <!-- Gif fetch and setup -->
       <img #gifElement [hidden]="true" (load)="onImageLoaded($event)" [src]="videoUrl">
+
     </div>
-
-
-    <!---------------------------------Assessment Video player------------------------------------>
-  
   </div>
   
   <!---------------------------------Assessment Controls------------------------------------>
@@ -47,26 +75,31 @@
     <button mat-raised-button color="primary" (click)="setGood()">GOOD</button>
     <button mat-raised-button color="warn" (click)="setBad()">BAD</button>
   </div>
-  <!-------------------------------End of Assessment Controls------------------------------->
-  
-  <!---------------------------------End of Assessment------------------------------------>
 
   <!---------------------------------Segmentation Controls------------------------------------>
   <div class="controls-container" *ngIf="isVideoActive && task">
     <div class="button-container">
+      <!-- Buttons NEXT - PREVIOUS - SKIP -->
       <button mat-raised-button matTooltip="Save selection and proceed" color="primary" [disabled]="isVideoLoading || toggleFrameSkipped"
         (click)="nextFrame()">Next Frame</button>
-        <button mat-raised-button matTooltip="Go back" class="skip-button" [disabled]="isVideoLoading" 
-          (click)="prevFrame()">Previous Frame</button>
+      <button mat-raised-button matTooltip="Go back" class="skip-button" [disabled]="isVideoLoading" 
+        (click)="prevFrame()">Previous Frame</button>
       <button mat-raised-button matTooltip="Skip frame if blurred" color="warn" [disabled]="isVideoLoading" 
         (click)="skipFrame()">Skip Frame</button>
-      <mat-slide-toggle matTooltip="Turn this off to restore the frame" *ngIf="isFrameSkipped" color="warn" [(ngModel)]="toggleFrameSkipped" (click)="checkIfSkipped()">Toggle Frame Skip</mat-slide-toggle>
+      <mat-slide-toggle matTooltip="Turn this off to restore the frame" *ngIf="isFrameSkipped" color="warn" 
+        [(ngModel)]="toggleFrameSkipped" 
+        (click)="checkIfSkipped()">Toggle Frame Skip</mat-slide-toggle>
+        
       <h3></h3> <!-- Spacer ( do not remove, it messes up the layout for some reason :D ) -->
+
+      <!-- Circle selection -->
       <mat-button-toggle-group name="selection" [value]="currentSelector" (change)="onSelectorChange(selectors.value)" #selectors="matButtonToggleGroup" aria-label="Selection">
         <mat-button-toggle [value]="selectorNames[0]">{{selectorNames[0]}}</mat-button-toggle>
         <mat-button-toggle [value]="selectorNames[1]">{{selectorNames[1]}}</mat-button-toggle>
         <mat-button-toggle [value]="selectorNames[2]">{{selectorNames[2]}}</mat-button-toggle>
       </mat-button-toggle-group>
+
+      <!-- Zoom and restore view -->
       <div class="switch">
         <p *ngIf="!isZoomed">Zoom:</p>
         <button *ngIf="!isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="zoom()" [(ngModel)]="isZooming"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="picture_in_picture"></mat-icon></button>
@@ -74,6 +107,8 @@
         <button *ngIf="isZoomed" mat-icon-button color="primary" aria-label="Restore View" (click)="restoreView()"><mat-icon aria-hidden="false" aria-label="Example home icon" fontIcon="home"></mat-icon></button>
       </div>
     </div>
+
+    <!-- Sliders RADIUS - X - Y -->
     <div class="slider-container">
       <mat-card>
         <div class="slider">
@@ -109,6 +144,4 @@
     <button mat-raised-button color="primary" (click)="navigateTo('TaskSelection')">Try another Video!</button>
     <button mat-raised-button color="warn" (click)="navigateTo('Login')">Exit</button>
   </div>
-  <!---------------------------------End of Continue or quit controlls------------------------------------>
-  
 </div>
