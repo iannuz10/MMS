@@ -20,8 +20,7 @@ export class HttpService {
     // const headers = new HttpHeaders();
     // const headers = { 'content-type': 'json', "Access-Control-Allow-Origin": '*'};
     const header = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     });
     const msg = new Message();
     msg.code = cod;
@@ -35,7 +34,6 @@ export class HttpService {
     console.log("my token:", tk)
     const header = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
       'Authorization': token
       // 'Authorization': token
     });
@@ -49,7 +47,6 @@ export class HttpService {
     // console.log("my token:", tk)
     const header = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
       'Authorization': token
       // 'Authorization': token
     });

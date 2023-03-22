@@ -1,48 +1,45 @@
 <div class="container">
 
-  <!---------------------------------Segmentation Video player------------------------------------>
-  <div class="video-container" *ngIf="isVideoActive && task">
-    <canvas #newImg id="newImg"
-      (wheel)="onMouseWheelScroll($event)" 
-      (mousedown)="mouseDown($event)" 
-      (window:mouseup)="mouseUp($event)" 
-      (window:mousemove)="mouseMove($event)" 
-      (window:resize)="onWindowResize($event)">
-    </canvas>
-    <svg #svgElement [attr.height]="video_height" [attr.width]="video_width">
-      <circle *ngIf="!toggleFrameSkipped" [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>
-      <circle *ngIf="!toggleFrameSkipped" [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
-      <circle *ngIf="!toggleFrameSkipped" [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
-      <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="2" fill-opacity="0%"></rect>
-    </svg>
-    <canvas #whiteCanva id="whiteCanva" [height]="video_height" [width]="video_width"></canvas>
-    <canvas #videoCanva id="videoCanva" [height]="video_height" [width]="video_width" ></canvas>
-    <canvas #skipCanva id="skipCanva" [height]="video_height" [width]="video_width" ></canvas>
-    <div id="progBar-container">
-      <mat-progress-bar mode="buffer" [value]="currentProgress" [bufferValue]="totalProgress"></mat-progress-bar>
-    </div>
-    <img #gifElement [hidden]="true" (load)="onImageLoaded($event)" src="http://localhost/G-10.0-CTCQWJYC.gif" 
-    rel:animated_src="http://localhost/G-10.0-CTCQWJYC.gif">
-  </div>
-  <!---------------------------------End of Segmentation------------------------------------>
-
-
-  <!---------------------------------Assessment Video player------------------------------------>
-  <div *ngIf="isVideoActive && !task">
-    <button mat-raised-button color="primary" (click)="prev(_mode.frame_by_frame)" style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
+  <!---------------------------------Segmentation Controls------------------------------------>
+  <div>
+    <button *ngIf="isVideoActive && !task" mat-raised-button color="primary" (click)="prev(_mode.frame_by_frame)" style="z-index: 1" [disabled]="isVideoLoading">Previous</button>
     <!-- <mat-slide-toggle color="primary" [(ngModel)]="isVideoPaused" (click)="playPause()">Play/Pause</mat-slide-toggle> -->
-    <mat-button-toggle-group name="ingredients" aria-label="Ingredients" multiple>
+    <mat-button-toggle-group *ngIf="isVideoActive && !task" name="ingredients" aria-label="Ingredients" multiple>
       <mat-button-toggle (click)="playPause()">Play/Pause</mat-button-toggle>
     </mat-button-toggle-group>
-    <button mat-raised-button color="primary" (click)="next(_mode.frame_by_frame)" style="z-index: 1"[disabled]="isVideoLoading">Next</button>
-    <mat-slider min=50 max = 120>
+    <button *ngIf="isVideoActive && !task" mat-raised-button color="primary" (click)="next(_mode.frame_by_frame)" style="z-index: 1"[disabled]="isVideoLoading">Next</button>
+    <mat-slider *ngIf="isVideoActive && !task" min=50 max = 120>
         <input matSliderThumb [(ngModel)]="delay_multiplier">
     </mat-slider>
-    <div class="video-container">
-      <canvas #newImg id="newImg"></canvas>
+    <div class="video-container" >
+      <!---------------------------------Assessment Video player------------------------------------>
+      <canvas *ngIf="isVideoActive && !task" #newImg id="newImg"></canvas>
+
+      <!---------------------------------Segmentation Video player------------------------------------>
+      <canvas #newImg id="newImg" *ngIf="isVideoActive && task"
+        (wheel)="onMouseWheelScroll($event)" 
+        (mousedown)="mouseDown($event)" 
+        (window:mouseup)="mouseUp($event)" 
+        (window:mousemove)="mouseMove($event)" 
+        (window:resize)="onWindowResize($event)">
+      </canvas>
+      <svg #svgElement [attr.height]="video_height" [attr.width]="video_width" *ngIf="isVideoActive && task">ù
+        <circle *ngIf="!toggleFrameSkipped" [attr.cx]="red_x" [attr.cy]="red_y" [attr.r]="red_r" [attr.stroke]="selectorColors[0]" [attr.stroke-opacity]="strokeOpacity[0]" stroke-width="3" [attr.fill]="selectorColors[0]" [attr.fill-opacity]="circleOpacity[0]"></circle>        <circle *ngIf="!toggleFrameSkipped" [attr.cx]="green_x" [attr.cy]="green_y" [attr.r]="green_r" [attr.stroke]="selectorColors[1]" [attr.stroke-opacity]="strokeOpacity[1]" stroke-width="3" [attr.fill]="selectorColors[1]" [attr.fill-opacity]="circleOpacity[1]"></circle>
+        <circle *ngIf="!toggleFrameSkipped" [attr.cx]="blue_x" [attr.cy]="blue_y" [attr.r]="blue_r" [attr.stroke]="selectorColors[2]" [attr.stroke-opacity]="strokeOpacity[2]" stroke-width="3" [attr.fill]="selectorColors[2]" [attr.fill-opacity]="circleOpacity[2]"></circle>
+        <rect *ngIf="isDraggingRect" [attr.x]="rect_x" [attr.y]="rect_y" [attr.width]="rect_w" [attr.height]="rect_h" stroke="gray" stroke-width="2" fill-opacity="0%"></rect>
+      </svg>
+      <canvas *ngIf="isVideoActive && task" #whiteCanva id="whiteCanva" [height]="video_height" [width]="video_width"></canvas>
+      <canvas *ngIf="isVideoActive && task" #videoCanva id="videoCanva" [height]="video_height" [width]="video_width" ></canvas>
+      <canvas *ngIf="isVideoActive && task" #skipCanva id="skipCanva" [height]="video_height" [width]="video_width" ></canvas>
+      <div *ngIf="isVideoActive && task" id="progBar-container">
+        <mat-progress-bar mode="buffer" [value]="currentProgress" [bufferValue]="totalProgress"></mat-progress-bar>
+      </div>
+      <img #gifElement [hidden]="true" (load)="onImageLoaded($event)" [src]="videoUrl">
     </div>
-    <img #gifElement [hidden]="true" *ngIf="!task" src="http://localhost/G-10.0-CTCQWJYC.gif" 
-    rel:animated_src="http://localhost/G-10.0-CTCQWJYC.gif" (load)="onImageLoaded($event)" [attr.clientWidth]="wwidth">
+
+
+    <!---------------------------------Assessment Video player------------------------------------>
+  
   </div>
   
   <!---------------------------------Assessment Controls------------------------------------>
@@ -109,7 +106,7 @@
 
   <!---------------------------------Continue or quit controls------------------------------------>
   <div class="button-container" *ngIf="!isVideoActive">
-    <button mat-raised-button color="primary" (click)="refresh()">Try another Video!</button>
+    <button mat-raised-button color="primary" (click)="navigateTo('TaskSelection')">Try another Video!</button>
     <button mat-raised-button color="warn" (click)="navigateTo('Login')">Exit</button>
   </div>
   <!---------------------------------End of Continue or quit controlls------------------------------------>

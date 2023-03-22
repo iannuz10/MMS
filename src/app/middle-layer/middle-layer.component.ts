@@ -33,8 +33,8 @@ export class MiddleLayerComponent implements OnInit{
             if(v.statusCode != 500){
               console.log("Valid token:", v.id_token);
               localStorage.setItem('authToken', v.id_token);
-              console.log("Redirect to: MainApp");
-              this.router.navigate(['MainApp']);
+              console.log("Redirect to: TaskSelection");
+              this.router.navigate(['TaskSelection']);
             }
             else{
               console.log("Invalid token:", v.id_token);
@@ -48,8 +48,7 @@ export class MiddleLayerComponent implements OnInit{
       return;
     }
     console.log('Skipping NEW TOKEN');
-    console.log('Redirecting to: MainApp');
-    this.router.navigate(['MainApp']);
+    console.log('Redirecting to: TaskSelection');
+    this.router.navigate(['TaskSelection']);
   }
-
 }

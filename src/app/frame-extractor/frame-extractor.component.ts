@@ -73,10 +73,10 @@ export class FrameExtractorComponent {
   token: string | null = null;
 
   // ONLINE
-  // static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/"
+  static baseVideoUrl: string = "http://mms-frontend.s3-website.eu-central-1.amazonaws.com/videos/"
 
   // OFFLINE
-  static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif"
+  // static baseVideoUrl: string = "https://mms-video-storage.s3.eu-central-1.amazonaws.com/videos/B-10_0-jSLmRpeC_GIF.gif"
 
   videoUrl: string = FrameExtractorComponent.baseVideoUrl;
   videoOffset: string ="";
@@ -140,7 +140,7 @@ export class FrameExtractorComponent {
     this.route.params.subscribe(params => {
       console.log(params);
       let tempTask = params["id"];
-      if (tempTask == "segmentation"){
+      if (tempTask == "Segmentation"){
         this.task = true;
       }
       else if (tempTask == "Assessment"){
@@ -150,37 +150,45 @@ export class FrameExtractorComponent {
     
   //   // You can also initialize the float field in the ngOnInit() method
   //   // Check if the user is logged in
-  //   this.token = localStorage.getItem('authToken');
-  //   if(this.token == null){
-  //     console.log("Not Authorized to access the videos");
-  //     this.router.navigate(["Login"]);
-  //   }
+    this.token = localStorage.getItem('authToken');
+    if(this.token == null){
+      console.log("Not Authorized to access the videos");
+      this.router.navigate(["Login"]);
+    }
     
-  //   // // Get the first video to review
+    // // Get the first video to review
     
-  //   this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe(complete =>
-  //     {
-  //       console.log("Got this video URL: ", complete.body);
-  //       console.log(!complete.body.includes(".mp4"));
-  //       if (!complete.body.includes(".mp4")){
-  //         // All videos reviewd
-  //         this.openSnackBar("All videos have been reviewed!!!");
-  //       }
-  //       this.videoOffset = complete.body;
-  //       this.videoUrl = FrameExtractorComponent.baseVideoUrl + this.videoOffset;
-  //     }
-  //     , error => 
-  //     {
-  //       console.log("Encountered Error: ", error.status);
-  //       localStorage.removeItem('authToken');
-  //       console.log("Redirecting to Authentication Page");
-  //       this.router.navigate(["Middle"]);
-  //       // Redirects to Google Login that redirects to MiddleComponent
-  //       window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
-  //     }
-  //   );
-  }
+    this.httpC.getVideo(localStorage.getItem('authToken')!).subscribe({
 
+      
+      next: (v) =>
+      {
+        console.log("V: ", v);
+        console.log("Got this video URL: ", v.body);
+        // console.log(!complete.body.includes(".gif"));
+        if (!v.body.includes(".gif")){
+          // All videos reviewd
+          this.openSnackBar("All videos have been reviewed!!!");
+        }
+        this.videoOffset = v.body;
+        this.videoUrl = FrameExtractorComponent.baseVideoUrl + this.videoOffset;
+      }
+      , error: (e) => 
+      {
+        console.log("Encountered Error: ", e.status);
+        localStorage.removeItem('authToken');
+        console.log("Redirecting to Authentication Page");
+        this.router.navigate(["Middle"]);
+        // Redirects to Google Login that redirects to MiddleComponent
+        window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A//www.googleapis.com/auth/userinfo.email&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=https%3A//www.test.com&client_id=850872334166-mr9gaff30197tgou4s9isdogiaq2b0oh.apps.googleusercontent.com"
+      } ,
+      complete: () => {
+        console.log("Completed the request");
+      }
+    }
+      );
+    }
+    
   onImageLoaded(event: any) {
     // Wait for the video to load (?)
     setTimeout(() => {
@@ -189,6 +197,7 @@ export class FrameExtractorComponent {
       } else{
         this.gifElement.nativeElement.setAttribute('rel:auto_play', '1');
       }
+      this.gifElement.nativeElement.setAttribute('rel:animated_src', this.videoUrl);
       this.gif = SuperGif({gif:this.gifElement.nativeElement, draw_while_loading:false});
       this.gif.load(function(this:any){
         console.log('oh hey, now the gif is loaded');
@@ -352,6 +361,8 @@ export class FrameExtractorComponent {
         this.toggleFrameSkipped = true;
         this.drawFrameSkipOverlay();
       } else {
+        let ctxSkip = this.skipCanva.nativeElement.getContext('2d');
+        ctxSkip.clearRect(0, 0, this.video_width, this.video_height);
         this.isFrameSkipped = false;
         this.toggleFrameSkipped = false;
         this.red_x = this.Payload[this.gif_real_index-1].r[0].x;
@@ -431,15 +442,15 @@ export class FrameExtractorComponent {
     blueR *= originalCoef;
 
     // Round the coordinates to 2 decimal places
-    redX.toFixed(2);
-    redY.toFixed(2);
-    redR.toFixed(2);    
-    greenX.toFixed(2);
-    greenY.toFixed(2);
-    greenR.toFixed(2);
-    blueX.toFixed(2);
-    blueY.toFixed(2);
-    blueR.toFixed(2);
+    redX = Math.trunc(redX * 100) / 100;
+    redY = Math.trunc(redY * 100) / 100;
+    redR = Math.trunc(redR * 100) / 100;
+    greenX = Math.trunc(greenX * 100) / 100;
+    greenY = Math.trunc(greenY * 100) / 100;
+    greenR = Math.trunc(greenR * 100) / 100;
+    blueX = Math.trunc(blueX * 100) / 100;
+    blueY = Math.trunc(blueY * 100) / 100;
+    blueR = Math.trunc(blueR * 100) / 100;
 
     // Save the coordinates
     maskDataRed.push({
@@ -492,6 +503,8 @@ export class FrameExtractorComponent {
       } else {
         this.isFrameSkipped = false;
         this.toggleFrameSkipped = false;
+        let ctxSkip = this.skipCanva.nativeElement.getContext('2d');
+        ctxSkip.clearRect(0, 0, this.video_width, this.video_height);
         this.red_x = this.Payload[this.gif_real_index].r[0].x;
         this.red_y = this.Payload[this.gif_real_index].r[0].y;
         this.red_r = this.Payload[this.gif_real_index].r[0].r;
@@ -562,6 +575,8 @@ export class FrameExtractorComponent {
       } else {
         this.isFrameSkipped = false;
         this.toggleFrameSkipped = false;
+        let ctxSkip = this.skipCanva.nativeElement.getContext('2d');
+        ctxSkip.clearRect(0, 0, this.video_width, this.video_height);
         this.red_x = this.Payload[this.gif_real_index].r[0].x;
         this.red_y = this.Payload[this.gif_real_index].r[0].y;
         this.red_r = this.Payload[this.gif_real_index].r[0].r;
@@ -1095,9 +1110,9 @@ export class FrameExtractorComponent {
             // Save the mask data API call
             // ONLINE
             // COMMENTA PER FARLO FUNZIONARE OFFLINE
-            // this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
-            //   console.log(data);
-            // });
+            this.httpC.postMaskList(this.Payload, this.videoOffset, this.token!).subscribe(data=>{
+              console.log(data);
+            });
             this.isVideoActive = false;
             this.openSnackBar("Video Finished!!!");
           } else {
